@@ -28,6 +28,7 @@ dependencies:
   games_services: ^3.0.0  # Achievements and leaderboards
   google_mobile_ads: ^3.0.0  # Ads
   in_app_purchase: ^3.0.1  # In-app purchases
+  http: ^0.13.6
 
 dev_dependencies:
   analysis_defaults:
