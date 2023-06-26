@@ -6,8 +6,8 @@ class ArtistGlobalInfo {
   final String id;
   final String name;
   final Uri uri;
-
-  const ArtistGlobalInfo({required this.uri,required this.name, required this.id, required this.genres});
+  late final Genre _primaryGenre;
+  ArtistGlobalInfo({required this.uri,required this.name, required this.id, required this.genres});
 
   factory ArtistGlobalInfo.fromJson(Map<String, dynamic> json) {
     HashSet<Genre> genres = HashSet<Genre>();
@@ -21,4 +21,6 @@ class ArtistGlobalInfo {
       genres : genres
     );
   }
+
+  Genre get primaryGenre => _primaryGenre;
 }

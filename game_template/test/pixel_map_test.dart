@@ -1,4 +1,4 @@
-import 'package:game_template/src/game_internals/pixel_map.dart';
+import 'package:game_template/src/game_internals/position_and_height_states/pixel_map.dart';
 import 'package:test/test.dart';
 
 
@@ -48,5 +48,15 @@ void main() {
     expect(thing[[0,1]], 2);
     expect(thing[[0,0]], 1);
     expect(thing[[1,1]], 3);
+  });
+
+  test('Values returns correct items', () {
+    var thing = PixelMap<int>();
+    thing[[0,1]] = 1;
+    thing[[0,0]] = 1;
+    thing[[1,1]] = 3;
+    thing[[1,0]] = 4;
+    thing[[1,0]] = 5;
+    expect(thing.values, unorderedEquals([1,1,5,3]));
   });
 }
