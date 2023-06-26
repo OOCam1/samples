@@ -5,12 +5,17 @@ import 'dart:math';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'building.dart';
 class PositionGenre {
-  final SplayTreeMap<double, Set<Pixel>> _adjacentEmpties = SplayTreeMap();
-  final SplayTreeMap<double, Map<Pixel, PositionGenre>> _adjacentOccupied = SplayTreeMap();
-  late final Pixel _origin;
 
-
-  PositionGenre(this._origin);
+  final HashSet<Pixel> _occupied = HashSet();
+  final SplayTreeMap<int, Set<Pixel>> _adjacentEmpties = SplayTreeMap();
+  final SplayTreeMap<int, Map<Pixel, PositionGenre>> _adjacentOccupied = SplayTreeMap();
+  late Pixel _origin;
+  late int xMin;
+  late int yMin;
+  late int xMax;
+  late int yMax;
+  //this origin may change as the district may be pushed away from original position
+  PositionGenre(Pixel origin) {_origin = origin; addToAdjacentEmpties(origin);}
 
 
   Pixel get origin => _origin;
@@ -32,13 +37,13 @@ class PositionGenre {
   }
 
 
-  double _getDistanceSquare(Pixel p) {
-    return (pow(p.x-_origin.x, 2) + pow(p.y-_origin.y, 2)) as double;
+  int _getDistanceSquare(Pixel p) {
+    return (pow(p.x-_origin.x, 2) + pow(p.y-_origin.y, 2)) as int;
   }
 
-  void occupyAdjacentSquare(Pixel p, PositionGenre pg) {
+  void handleAdjacentSquareGettingOccupied(Pixel p, PositionGenre pg) {
     if (pg != this) {
-      double squareDistance = _getDistanceSquare(p);
+      int squareDistance = _getDistanceSquare(p);
       if (!_adjacentOccupied.containsKey(squareDistance)) {
         HashMap<Pixel, PositionGenre> newMap = HashMap();
         _adjacentOccupied[squareDistance] = newMap;
@@ -49,29 +54,50 @@ class PositionGenre {
     _removeAdjacentEmpties(p);
   }
 
+  void dealWithOwnBuildingRemovedFromSpace(Pixel pixel) {
+    _occupied.remove(pixel);
+    for (Pixel adjacentPixel in pixel.getAdjacents()) {
+      if (!_doesSquareHaveAdjacentOwnedBuilding(adjacentPixel)) {
+        _removeFromAdjacentOccupied(adjacentPixel);
+        _removeAdjacentEmpties(adjacentPixel);
+      }
+    }
+  }
+
   void addOwnBuildingToSquare(Building building) {
     Pixel pixel = building.position;
     _removeAdjacentEmpties(pixel);
     _removeFromAdjacentOccupied(pixel);
+    _occupied.add(pixel);
+  }
+
+
+  void addToAdjacentEmpties(Pixel p) {
+    var distanceSquare = _getDistanceSquare(p);
+    if (!_adjacentEmpties.containsKey(distanceSquare)) {
+      _adjacentEmpties[distanceSquare] = <Pixel>{};
+    }
+    _adjacentEmpties[distanceSquare]!.add(p);
+  }
+
+  bool _doesSquareHaveAdjacentOwnedBuilding(Pixel pixel) {
+    for (Pixel adjacentPixel in pixel.getAdjacents())  {
+      if (_occupied.contains(adjacentPixel)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   void _removeFromAdjacentOccupied(Pixel p) {
-    double distanceSquare = _getDistanceSquare(p);
+    var distanceSquare = _getDistanceSquare(p);
     if (_adjacentOccupied.containsKey(distanceSquare)) {
       _adjacentOccupied[distanceSquare]!.remove(p);
     }
   }
 
-  void addToAdjacentEmpties(Pixel p) {
-    double distanceSquare = _getDistanceSquare(p);
-    if (!_adjacentEmpties.containsKey(distanceSquare)) {
-      _adjacentEmpties[distanceSquare] = Set<Pixel>();
-    }
-    _adjacentEmpties[distanceSquare]!.add(p);
-  }
-
   void _removeAdjacentEmpties(Pixel p) {
-    double distanceSquare = _getDistanceSquare(p);
+    var distanceSquare = _getDistanceSquare(p);
     if (_adjacentEmpties.containsKey(distanceSquare)) {
       _adjacentEmpties[distanceSquare]!.remove(p);
     }

@@ -26,12 +26,22 @@ class Pixel {
   Pixel._internal(this._x, this._y);
 
 
+
   int get x => _x;
   int get y => _y;
 
   @override
   bool equals(Pixel pixel) {
     return (pixel.x == _x && pixel.y == _y);
+  }
+
+  Set<Pixel> getAdjacents() {
+    Set<Pixel> output = HashSet();
+    output.add(Pixel(x-1, y));
+    output.add(Pixel(x+1, y));
+    output.add(Pixel(x, y+1));
+    output.add(Pixel(x, y-1));
+    return output;
   }
 
 

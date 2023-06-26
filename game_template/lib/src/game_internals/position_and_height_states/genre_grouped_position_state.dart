@@ -21,11 +21,21 @@ class GenreGroupedPositionState implements PositionStateInterface {
 
   final HashMap<Genre, PositionGenre> _genreToPositionGenre = HashMap();
   //Set of empty adjacent squares
-  final SplayTreeMap<double, Set<Pixel>> _adjacentEmpties = SplayTreeMap();
+  final SplayTreeMap<int, Set<Pixel>> _adjacentEmpties = SplayTreeMap();
   //Central square
   final Pixel _origin = Pixel(0,0);
 
 
+  @override
+  void clear() {
+    _positionMap.clear();
+    _artistGlobalInfoToBuildingMap.clear();
+    _genreToPositionGenre.clear();
+    var newSet = HashSet<Pixel>();
+    newSet.add(_origin);
+    _adjacentEmpties.clear();
+    _adjacentEmpties[0] = newSet;
+  }
 
   GenreGroupedPositionState._internal() {
     var newSet = HashSet<Pixel>();
@@ -46,7 +56,8 @@ class GenreGroupedPositionState implements PositionStateInterface {
   }
 
   @override
-  Map<ArtistGlobalInfo, List<int>> getPositions() {
+  //returns map from ArtistGlobalInfo to [x,y,height]
+  Map<ArtistGlobalInfo, List<int>> getPositionsAndHeights() {
     HashMap<ArtistGlobalInfo, List<int>> output = HashMap();
     for (MapEntry<ArtistGlobalInfo, Building> mapEntry in _artistGlobalInfoToBuildingMap.entries) {
       var building = mapEntry.value;
@@ -57,17 +68,12 @@ class GenreGroupedPositionState implements PositionStateInterface {
   }
 
   @override
-  void moveBuilding(ArtistGlobalInfo artistGlobalInfo,  int x, int y) {
-    // TODO: implement moveBuilding
-    throw UnimplementedError();
-  }
-
-  @override
   void placeNewBuilding(ArtistGlobalInfo artistGlobalInfo, int height) {
     if (_artistGlobalInfoToBuildingMap.containsKey(artistGlobalInfo)) {
       throw Exception("Artist already in position state");
     }
     Building buildingToPlace = Building(artistGlobalInfo, height, _getPositionGenre(artistGlobalInfo.primaryGenre));
+    _artistGlobalInfoToBuildingMap[artistGlobalInfo] = buildingToPlace;
     _findSpotAndPlaceBuilding(buildingToPlace, HashSet());
   }
 
@@ -87,9 +93,13 @@ class GenreGroupedPositionState implements PositionStateInterface {
     if (_positionMap.containsKey(position)) {
       squareOccupied = true;
       oldBuilding = _positionMap[position]!;
+
     }
     _placeBuildingInNewSquare(building, position);
-    if (squareOccupied) {_findSpotAndPlaceBuilding(oldBuilding, previousGenres);}
+    if (squareOccupied) {
+      _findSpotAndPlaceBuilding(oldBuilding, previousGenres);
+      oldBuilding.positionGenre.dealWithOwnBuildingRemovedFromSpace(position);
+    }
   }
 
   void _placeBuildingInNewSquare(Building building, Pixel pixel) {
@@ -97,19 +107,18 @@ class GenreGroupedPositionState implements PositionStateInterface {
     _removeFromAdjacentEmpties(pixel);
     _positionMap[pixel] = building;
     building.positionGenre.addOwnBuildingToSquare(building);
-    for (int xDiff = -1; xDiff <=1; xDiff +=2) {
-      for (int yDiff = -1; yDiff <=1; yDiff += 2) {
-        _adjustAdjacents(pixel, Pixel(pixel.x+xDiff, pixel.y + yDiff));
-      }
+    for (Pixel adjacentPixel in pixel.getAdjacents()) {
+      _adjustAdjacents(pixel, adjacentPixel);
     }
+
   }
 
   void _adjustAdjacents(Pixel newBuildingPosition, Pixel adjacentSquare) {
     PositionGenre newPositionGenre = _positionMap[newBuildingPosition]!.positionGenre;
     if (_positionMap.containsKey(adjacentSquare)) {
       PositionGenre adjacentPositionGenre = _positionMap[adjacentSquare]!.positionGenre;
-      adjacentPositionGenre.occupyAdjacentSquare(newBuildingPosition, newPositionGenre);
-      newPositionGenre.occupyAdjacentSquare(adjacentSquare, adjacentPositionGenre);
+      adjacentPositionGenre.handleAdjacentSquareGettingOccupied(newBuildingPosition, newPositionGenre);
+      newPositionGenre.handleAdjacentSquareGettingOccupied(adjacentSquare, adjacentPositionGenre);
     }
     else {
       newPositionGenre.addToAdjacentEmpties(adjacentSquare);
@@ -117,13 +126,13 @@ class GenreGroupedPositionState implements PositionStateInterface {
     }
   }
 
-  double _getDistanceSquare(Pixel pixel) {
-    return (pow(pixel.x-_origin.x, 2) + pow(pixel.y-_origin.y, 2)) as double;
+  int _getDistanceSquare(Pixel pixel) {
+    return (pow(pixel.x-_origin.x, 2) + pow(pixel.y-_origin.y, 2)) as int;
   }
 
 
   void _addToAdjacentEmpties(Pixel pixel) {
-    double distance = _getDistanceSquare(pixel);
+    var distance = _getDistanceSquare(pixel);
     if (!_adjacentEmpties.containsKey(distance)) {
       Set<Pixel> pixelSet = HashSet();
       _adjacentEmpties[distance] = pixelSet;
@@ -132,7 +141,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   }
 
   void _removeFromAdjacentEmpties(Pixel pixel) {
-    double distance = _getDistanceSquare(pixel);
+    var distance = _getDistanceSquare(pixel);
     if (_adjacentEmpties.containsKey(distance)) {
       _adjacentEmpties[distance]!.remove(pixel);
     }
