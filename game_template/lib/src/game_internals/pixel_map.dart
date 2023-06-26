@@ -72,7 +72,7 @@ class PixelMap<T> implements Map<List<int>, T> {
     try {
       list = key as List<int>;
     }
-    on Exception{
+    catch (e) {
       throw WrongKeyType();
     }
 
@@ -80,7 +80,7 @@ class PixelMap<T> implements Map<List<int>, T> {
       throw WrongKeyLength();
     }
     if (!_internalMap.containsKey(list[0])) {
-      throw Exception("Pixel map does not contain x");
+      return false;
     }
     return _internalMap[list[0]]!.containsKey(list[1]);
   }
