@@ -3,8 +3,8 @@
 import 'dart:collection';
 import 'dart:math';
 
-import 'package:game_template/src/game_internals/artist_global_info.dart';
-import 'package:game_template/src/game_internals/genre.dart';
+import 'package:game_template/src/game_internals/models/artist_global_info.dart';
+import 'package:game_template/src/game_internals/models/genre.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/genre_grouped_position_state.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'package:test/test.dart';

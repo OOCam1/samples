@@ -1,7 +1,7 @@
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/position_genre.dart';
 
-import '../artist_global_info.dart';
+import '../models/artist_global_info.dart';
 
 class Building {
   late Pixel _position;

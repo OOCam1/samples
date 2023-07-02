@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'dart:math';
-import 'package:game_template/src/game_internals/artist_global_info.dart';
-import 'package:game_template/src/game_internals/genre.dart';
+import 'package:game_template/src/game_internals/models/artist_global_info.dart';
+import 'package:game_template/src/game_internals/models/genre.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/position_state_interface.dart';
 import 'building.dart';
@@ -154,6 +154,25 @@ class GenreGroupedPositionState implements PositionStateInterface {
       }
     }
     throw Exception("No squares in adjacentEmpties");
+  }
+
+  @override
+  void placeBuildings(Map<ArtistGlobalInfo, int> buildings) {
+    HashMap<Genre, HashMap<ArtistGlobalInfo, int>> districtBuildings = HashMap();
+    for (MapEntry<ArtistGlobalInfo, int> mapEntry in buildings.entries) {
+      var artistGlobalInfo = mapEntry.key;
+      var primaryGenre = artistGlobalInfo.primaryGenre;
+      if (!districtBuildings.containsKey(artistGlobalInfo)) {
+        districtBuildings[primaryGenre] = HashMap();
+      }
+      districtBuildings[primaryGenre]![artistGlobalInfo] = mapEntry.value;
+    }
+
+    for (MapEntry<Genre, HashMap<ArtistGlobalInfo, int>> mapEntry in districtBuildings.entries) {
+      for (MapEntry<ArtistGlobalInfo, int> artistMapEntry in mapEntry.value.entries) {
+        placeNewBuilding(artistMapEntry.key, artistMapEntry.value);
+      }
+    }
   }
 
 

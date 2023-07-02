@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:game_template/src/game_internals/artist_global_info.dart';
+import 'package:game_template/src/game_internals/models/artist_global_info.dart';
 import 'package:game_template/src/game_internals/spotify_user_authorisation.dart';
 import 'package:http/http.dart' as http;
 

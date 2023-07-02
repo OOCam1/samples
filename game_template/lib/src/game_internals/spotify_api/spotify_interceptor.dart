@@ -7,7 +7,7 @@ import '../models/auth_tokens.dart';
 class SpotifyInterceptor implements InterceptorContract {
   @override
   Future<RequestData> interceptRequest({required RequestData data}) async {
-    final storage = new FlutterSecureStorage();
+    final storage = FlutterSecureStorage();
     final accessToken = await storage.read(key: AuthTokens.accessTokenKey);
     data.headers
         .addAll({HttpHeaders.authorizationHeader: 'Bearer $accessToken'});
