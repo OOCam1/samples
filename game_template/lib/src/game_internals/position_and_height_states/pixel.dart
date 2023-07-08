@@ -25,8 +25,6 @@ class Pixel {
 
   Pixel._internal(this._x, this._y);
 
-
-
   int get x => _x;
   int get y => _y;
 
@@ -43,6 +41,5 @@ class Pixel {
     output.add(Pixel(x, y-1));
     return output;
   }
-
 
 }

@@ -23,8 +23,8 @@ class Building {
   void setHeight(int height) {
     _height = height;
   }
-  int getHeight() {return _height;}
-
+  int get height => _height;
+  ArtistGlobalInfo get artistGlobalInfo => _artistGlobalInfo;
   PositionGenre get positionGenre => _positionGenre;
 
 }

@@ -1,6 +1,8 @@
 
 
 
+import 'dart:collection';
+
 import 'package:game_template/src/game_internals/models/artist_global_info.dart';
 
 
@@ -11,5 +13,12 @@ abstract class PositionStateInterface {
   void clear();
 
   //List contains x, then y, then height
-  Map<ArtistGlobalInfo, List<int>> getPositionsAndHeights();
+  Map<ArtistGlobalInfo, List<int>> getPositionsAndHeights([Iterable<List<int>> verticalObstacles, Iterable<List<int>> horizontalObstacles]);
+
+  int get xMax;
+  int get xMin;
+  int get yMax;
+  int get yMin;
+
+
 }

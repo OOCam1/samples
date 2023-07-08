@@ -34,7 +34,7 @@ void display(Map<ArtistGlobalInfo, List<int>> positions) {
     print('');
   }
 
-  for (int y = yCoordMin; y <= yCoordMax; y ++) {
+  for (int y = yCoordMax; y >= yCoordMin; y --) {
     String str = "";
     for (int x = xCoordMin; x <= xCoordMax; x ++) {
       if (positionToGenre.containsKey(Pixel(x,y))) {
@@ -121,6 +121,77 @@ void main() {
       occupiedPositions.add(p);
     }
   });
-}
+
+  test('Two obstacles (2 vertical) and 3 artists is ok', () {
+    positionState.clear();
+    int numArtists = 3;
+    HashSet<ArtistGlobalInfo> artists = HashSet();
+    for (int i = 0; i <numArtists; i += 1) {
+      artists.add(generateTestArtistGlobalInfo(i%10));
+    }
+
+    for (ArtistGlobalInfo artistGlobalInfo in artists) {
+      positionState.placeNewBuilding(artistGlobalInfo, 6);
+      display(positionState.getPositionsAndHeights([[0,0], [0,1]]));
+    }
+    var positions = positionState.getPositionsAndHeights([[0,0], [0,1]]);
+
+    for (List<int> position in positions.values) {
+      assert((position[0] != 0 || position[1] != 0));
+      assert((position[0] != 0 || position[1] != 1));
+      expect(position.length, 3);
+    }
+  });
+  test('Two obstacles (1 vertical and 1 horizontal) and 6 artists is ok', () {
+    positionState.clear();
+    int numArtists = 3;
+    HashSet<ArtistGlobalInfo> artists = HashSet();
+    for (int i = 0; i <numArtists; i += 1) {
+      artists.add(generateTestArtistGlobalInfo(i%10));
+    }
+
+    for (ArtistGlobalInfo artistGlobalInfo in artists) {
+      positionState.placeNewBuilding(artistGlobalInfo, 6);
+      display(positionState.getPositionsAndHeights([[0,0]], [[0,1]]));
+    }
+    var positions = positionState.getPositionsAndHeights([[0,0]], [[0,1]]);
+    print(positions);
+    for (List<int> position in positions.values) {
+      assert((position[0] != 0 || position[1] != 0));
+      assert((position[0] != 0 || position[1] != 1));
+      expect(position.length, 3);
+    }
+  });
+
+
+
+
+  test('Two obstacles and 100 artists returns as expected', () {
+    positionState.clear();
+    int numArtists = 100;
+    HashSet<ArtistGlobalInfo> artists = HashSet();
+    for (int i = 0; i <numArtists; i += 1) {
+      artists.add(generateTestArtistGlobalInfo(i%10));
+    }
+    for (ArtistGlobalInfo artistGlobalInfo in artists) {
+      positionState.placeNewBuilding(artistGlobalInfo, 6);
+      display(positionState.getPositionsAndHeights([[0,0]], [[0,1]]));
+    }
+    var positions = positionState.getPositionsAndHeights([[0,0]], [[0,1]]);
+    expect(positions.length, numArtists);
+
+    HashSet<Pixel> occupiedPositions = HashSet();
+    for (List<int> position in positions.values) {
+      assert((position[0] != 0 || position[1] != 0));
+      assert((position[0] != 0 || position[1] != 1 ));
+      expect(position.length, 3);
+      var p = Pixel(position[0], position[1]);
+      assert(!occupiedPositions.contains(p));
+      occupiedPositions.add(p);
+    }
+  });
+
+
+  }
 
 

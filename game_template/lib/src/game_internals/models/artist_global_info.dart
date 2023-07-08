@@ -1,4 +1,3 @@
-import 'dart:collection';
 
 import 'genre.dart';
 class ArtistGlobalInfo {
