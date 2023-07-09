@@ -156,7 +156,6 @@ class PositionGenre {
   }
 
   void _removeAdjacentEmpties(Pixel p) {
-    var distanceSquare = _getDistanceSquare(p);
     if (_adjacentEmpties.contains(p)) {
       _adjacentEmpties.remove(p);
     }

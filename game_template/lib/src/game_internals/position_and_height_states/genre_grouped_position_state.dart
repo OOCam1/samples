@@ -264,7 +264,6 @@ class GenreGroupedPositionState implements PositionStateInterface {
   //if we would shift horizontally, must increase offset based on vertical obstacles in same row
   Map<Building, Pixel> _adjustPositionsForHorizontalObstacles(Map<Building, Pixel> adjustedPositions, Set<List<int>> horizontalObstacles, Set<List<int>> verticalObstacles) {
     HashMap<int, HashSet<int>> yPositionToHorizontalObstacles = _generatePositionToSetPositions(horizontalObstacles, 1);
-    HashMap<int, HashSet<int>> yPositionToVerticalObstacles = _generatePositionToSetPositions(verticalObstacles, 1);
     Map<Building, Pixel> output = HashMap();
     for (MapEntry<Building, Pixel> mapEntry in adjustedPositions.entries) {
       var currentPosition = mapEntry.value;

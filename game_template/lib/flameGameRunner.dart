@@ -2,7 +2,7 @@ import "dart:collection";
 
 import "package:flame/game.dart";
 import "package:flutter/cupertino.dart";
-import "package:game_template/src/city_screen/city_screen.dart";
+import 'package:game_template/src/city_screen.dart';
 import "package:game_template/src/game_internals/models/artist_global_info.dart";
 import "package:game_template/src/game_internals/models/genre.dart";
 
@@ -21,7 +21,7 @@ void main() {
   double count = 5;
   for (ArtistGlobalInfo artistGlobalInfo in artists.keys) {
     artists[artistGlobalInfo] = count.toInt();
-    count += 2;
+    count += 6;
   }
   // positionState.placeBuildings(artists);
   // var positions = positionState.getPositionsAndHeights();

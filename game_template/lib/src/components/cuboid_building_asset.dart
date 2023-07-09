@@ -5,7 +5,7 @@ import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
-import 'package:game_template/src/city_screen/building_asset.dart';
+import 'package:game_template/src/components/building_asset.dart';
 import 'package:game_template/src/game_internals/models/artist_global_info.dart';
 
 
@@ -24,10 +24,10 @@ class CuboidBuildingAsset extends BuildingAsset {
   late final PolygonComponent top;
   late double _cuboidHeight;
   late final ArtistGlobalInfo _artistGlobalInfo;
-
+  static const double _rightDarkerThanLeftPercentage = 0.4;
   late double _horizontalDifferenceFromCenterToSideCorner;
   late double _heightDifferenceFromCenterToSideCorner;
-  late Paint _paint;
+  late Color _leftColor;
 
 
   @override
@@ -46,21 +46,26 @@ class CuboidBuildingAsset extends BuildingAsset {
   }
 
   factory CuboidBuildingAsset(Vector2 position, double height, ArtistGlobalInfo artistGlobalInfo,
-      double horizontalDifferenceFromCenterToSideCorner, double heightDifferenceFromCenterToSideCorner, Paint paint, int priority) {
+      double horizontalDifferenceFromCenterToSideCorner, double heightDifferenceFromCenterToSideCorner,
+      Color color, int priority) {
       // if (_artistInfoToCuboidAsset.containsKey(artistGlobalInfo)) {
       //   return _artistInfoToCuboidAsset[artistGlobalInfo]!;
       // }
       var newBuilding = CuboidBuildingAsset._internal(position, height, artistGlobalInfo, horizontalDifferenceFromCenterToSideCorner,
-        heightDifferenceFromCenterToSideCorner, paint, priority);
+        heightDifferenceFromCenterToSideCorner, color, priority);
       _artistInfoToCuboidAsset[artistGlobalInfo] = newBuilding;
       return newBuilding;
   }
 
   
   CuboidBuildingAsset._internal(Vector2 position, this._cuboidHeight, this._artistGlobalInfo, this._horizontalDifferenceFromCenterToSideCorner,
-      this._heightDifferenceFromCenterToSideCorner, this._paint, this._priority ) {
+      this._heightDifferenceFromCenterToSideCorner, this._leftColor, this._priority ) {
     //bottom center corner - bottom corner that's closest to viewer
     this.position = position;
+    var leftPaint = _getPaintFromColor(_leftColor);
+    var rightPaint = _getPaintFromColor(_getDarkerColor(_rightDarkerThanLeftPercentage, _leftColor));
+    //change later
+    var topPaint = leftPaint;
 
     //entire height of shape including top edges - not height of cuboid
     size = Vector2(2*_horizontalDifferenceFromCenterToSideCorner, 2*_heightDifferenceFromCenterToSideCorner + _cuboidHeight);
@@ -73,7 +78,7 @@ class CuboidBuildingAsset extends BuildingAsset {
       Vector2(_horizontalDifferenceFromCenterToSideCorner, height),
       Vector2(_horizontalDifferenceFromCenterToSideCorner, 2*_heightDifferenceFromCenterToSideCorner)
     ]);
-    leftSide = PolygonComponent(paint:_paint, leftVertices);
+    leftSide = PolygonComponent(paint:leftPaint, leftVertices);
 
     var rightVertices = ([
       Vector2(_horizontalDifferenceFromCenterToSideCorner, 2*_heightDifferenceFromCenterToSideCorner),
@@ -83,7 +88,7 @@ class CuboidBuildingAsset extends BuildingAsset {
 
 
     ]);
-    rightSide = PolygonComponent(rightVertices, paint:_paint);
+    rightSide = PolygonComponent(rightVertices, paint:rightPaint);
 
     var topVertices = ([
       Vector2(0, _heightDifferenceFromCenterToSideCorner),
@@ -92,8 +97,36 @@ class CuboidBuildingAsset extends BuildingAsset {
       Vector2(_horizontalDifferenceFromCenterToSideCorner, 0)
 
     ]);
-    top = PolygonComponent(topVertices, paint: _paint);
+    top = PolygonComponent(topVertices, paint: topPaint);
 }
+
+
+  Paint _getPaintFromColor(Color color) {
+      var paint = Paint();
+      paint.style = PaintingStyle.fill;
+      paint.color = color;
+      return paint;
+  }
+  Color _getDarkerColor(double percentageDarker, Color color) {
+      // return Color.fromRGBO((color.red*(1-percentageDarker)).toInt(),
+      //     (color.green*(1-percentageDarker)).toInt(),
+      //     (color.blue*(1-percentageDarker)).toInt(),
+      //     color.opacity);
+
+      //its pretty sexy if you just darken the red component and set the others
+    //to 0
+
+    //mega sex
+      return Color.fromRGBO(75,0,0,color.opacity);
+
+      //this one darkens the red component, rather than producing a flat value:
+    // gives black square if building is blue or green tho
+
+      // return Color.fromRGBO((color.red*(1-percentageDarker)).toInt(),
+      //     0, 0, color.opacity);
+
+
+  }
 
 
 }
