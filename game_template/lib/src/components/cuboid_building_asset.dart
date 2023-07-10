@@ -14,8 +14,8 @@ class CuboidBuildingAsset extends BuildingAsset {
 
   static final HashMap<ArtistGlobalInfo, CuboidBuildingAsset> _artistInfoToCuboidAsset = HashMap();
 
-    @override
 
+  @override
   int get priority => _priority;
 
   late final PolygonComponent leftSide;
@@ -45,6 +45,8 @@ class CuboidBuildingAsset extends BuildingAsset {
     add(top);
   }
 
+
+
   factory CuboidBuildingAsset(Vector2 position, double height, ArtistGlobalInfo artistGlobalInfo,
       double horizontalDifferenceFromCenterToSideCorner, double heightDifferenceFromCenterToSideCorner,
       Color color, int priority) {
@@ -60,16 +62,19 @@ class CuboidBuildingAsset extends BuildingAsset {
   
   CuboidBuildingAsset._internal(Vector2 position, this._cuboidHeight, this._artistGlobalInfo, this._horizontalDifferenceFromCenterToSideCorner,
       this._heightDifferenceFromCenterToSideCorner, this._leftColor, this._priority ) {
-    //bottom center corner - bottom corner that's closest to viewer
+
+    //center of base
     this.position = position;
     var leftPaint = _getPaintFromColor(_leftColor);
     var rightPaint = _getPaintFromColor(_getDarkerColor(_rightDarkerThanLeftPercentage, _leftColor));
+
     //change later
     var topPaint = leftPaint;
 
     //entire height of shape including top edges - not height of cuboid
     size = Vector2(2*_horizontalDifferenceFromCenterToSideCorner, 2*_heightDifferenceFromCenterToSideCorner + _cuboidHeight);
-    anchor = Anchor.bottomCenter;
+    double yComponent = (height-_heightDifferenceFromCenterToSideCorner)/height;
+    anchor = Anchor(0.5, yComponent);
 
 
     var leftVertices = ([
@@ -116,15 +121,14 @@ class CuboidBuildingAsset extends BuildingAsset {
       //its pretty sexy if you just darken the red component and set the others
     //to 0
 
-    //mega sex
-      return Color.fromRGBO(75,0,0,color.opacity);
+    // //mega sex
+    //   return Color.fromRGBO(75,0,0,color.opacity);
 
       //this one darkens the red component, rather than producing a flat value:
     // gives black square if building is blue or green tho
 
-      // return Color.fromRGBO((color.red*(1-percentageDarker)).toInt(),
-      //     0, 0, color.opacity);
-
+      return Color.fromRGBO((color.red*(1-percentageDarker)).clamp(30,70).toInt(),
+          0, 0, color.opacity);
 
   }
 

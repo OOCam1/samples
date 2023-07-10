@@ -7,6 +7,8 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:game_template/src/components/building_asset.dart';
 import 'package:game_template/src/components/cuboid_building_asset.dart';
+import 'package:game_template/src/components/road_square.dart';
+import 'package:game_template/src/components/uniform_road_square.dart';
 
 import 'game_internals/models/artist_global_info.dart';
 import 'game_internals/models/genre.dart';
@@ -20,11 +22,13 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 
 /*TODO:
 1. Refactor positioning on screen code into new class
+2. make roads permanent and dynamically add them
 2. standardise heights
 3. increase definition on edges of cuboids
 4. draw roads/river
 3. zooooooom
 4. make sure setUpBuildings is run after addartists
+5. adjust cuboidanchor to be the center of the base - will help with road positioning
 */
 class CityScreen extends FlameGame {
 
@@ -36,7 +40,7 @@ class CityScreen extends FlameGame {
   late final double _viewedHeightToActualHeightRatio;
   static const double _cameraRadiansFromHorizontal = 80 * pi/180;
   late double _gridSquareVerticalToHorizontalRatio;
-  static const double _buildingSideToGridSquareSideRatio = 0.5;
+  static const double _buildingSideToGridSquareSideRatio = 0.4;
 
 
   static const int _minDistanceBetweenRoads = 3;
@@ -50,11 +54,13 @@ class CityScreen extends FlameGame {
   late int _diagonalHorizontalMaxGrid;
   late int _diagonalHorizontalMinGrid;
   late int _buildingMaxHeight;
-  final Set<PositionComponent> _buildingAssets = HashSet();
+  int _minPriority = 0;
+  final Set<PositionComponent> _componentsToRender = HashSet();
   final Map<Genre, Color> _genreToColor = HashMap();
   late final Map<ArtistGlobalInfo, int> _artists;
   late final List<Set<List<int>>> _obstaclePositions;
-  final Set<List<int>> _roadPositions = HashSet();
+  late final Set<List<int>> _roadPositions;
+
 
 
   factory CityScreen(Map<ArtistGlobalInfo, int> artists) {
@@ -84,13 +90,12 @@ class CityScreen extends FlameGame {
 
 
     _setUpAssets();
-    await world.addAll(_buildingAssets);
-    //world.add(RectangleComponent.square(size:100.0, position: _minCentrePosition - Vector2(0,100), ));
-    // var target = CuboidBuildingAsset(_minCentrePosition + Vector2(300,-100), 200, generateTestArtistGlobalInfo(1),20, 10, _getArtistPaint(generateTestArtistGlobalInfo(1)), 0 );
+    await world.addAll(_componentsToRender);
+
+    // var target = CuboidBuildingAsset(Vector2(0,0), 200, generateTestArtistGlobalInfo(1),20, 10, Colors.red, 0 );
     // world.add(target);
     print('done');
 
-    // _zoomInOnLocation(target.position - Vector2(0,target.height/2), 1.5);
   }
 
 
@@ -113,12 +118,16 @@ class CityScreen extends FlameGame {
     positionStateInterface.placeBuildings(_artists);
 
     _obstaclePositions = _generateObstacleGridPositions();
-    var artistPositions = positionStateInterface.getPositionsAndHeights(_obstaclePositions[0], _obstaclePositions[1]);
-
+    Map<ArtistGlobalInfo, List<int>> artistPositions = positionStateInterface.getPositionsAndHeights(_obstaclePositions[0], _obstaclePositions[1]);
+    var artistPositionsList = artistPositions.values.toList();
+    artistPositionsList.sort((a,b) => (a[0].compareTo(b[0])));
+    int artistPositionsXmin = artistPositionsList[0][0];
+    assert(artistPositionsXmin == positionStateInterface.xMin);
+    artistPositionsList.sort((a,b) => (a[1].compareTo(b[1])));
+    assert(artistPositionsList[0][1] == positionStateInterface.yMin);
     _setGridHorizontalSize(artistPositions);
     _setUpBuildings(artistPositions);
-
-
+    _addRoads();
 
   }
 
@@ -128,13 +137,17 @@ class CityScreen extends FlameGame {
         throw Exception("Map entry for building creation does not have length 3 - x, y, height");
       }
       var gridPosition = Vector2(buildingPositionEntry.value[0].toDouble(), buildingPositionEntry.value[1].toDouble());
-      Vector2 position = _convertGridPositionToScreenPosition(gridPosition);
+      Vector2 positionOfCenterOfSquare = _convertGridPositionToScreenPosition(gridPosition);
 
       //what order buildings will be rendered
-      int priority = (gridPosition[0] + gridPosition[1]).toInt();
+      int priority = -(gridPosition[0] + gridPosition[1]).toInt();
+
+      //so that obstacles can be rendered behind all buildings
+      _minPriority = min(priority, _minPriority);
+
       double height = buildingPositionEntry.value[2] * _viewedHeightToActualHeightRatio;
       //create new buildingAsset
-      _buildingAssets.add(CuboidBuildingAsset(position,
+      _componentsToRender.add(CuboidBuildingAsset(positionOfCenterOfSquare,
           height,
           buildingPositionEntry.key,
           _gridSquareHorizontalSize*_buildingSideToGridSquareSideRatio,
@@ -224,10 +237,11 @@ class CityScreen extends FlameGame {
     HashSet<List<int>> horizontalRoadSquares = HashSet();
     for (int y in horizontalRoadPositions) {
       for (int x = positionStateInterface.xMin; x <=
-          positionStateInterface.xMax; x ++) {
+          positionStateInterface.xMax+verticalRoadPositions.length; x ++) {
         horizontalRoadSquares.add([x, y]);
       }
     }
+    _roadPositions = verticalRoadSquares.toSet().union(horizontalRoadSquares.toSet());
     return [horizontalRoadSquares, verticalRoadSquares];
   }
   
@@ -249,8 +263,15 @@ class CityScreen extends FlameGame {
     }
   }
 
-  _addRoads() {
-
+  void _addRoads() {
+    for (List<int> roadPosition in _roadPositions) {
+      RoadSquare roadSquare = UniformRoadSquare(_gridSquareHorizontalSize,
+        _gridSquareHorizontalSize*_gridSquareVerticalToHorizontalRatio,
+        _convertGridPositionToScreenPosition(Vector2(roadPosition[0].toDouble(), roadPosition[1].toDouble())),
+        _minPriority-1
+      );
+      _componentsToRender.add(roadSquare);
+    }
   }
 
   /*
@@ -264,7 +285,7 @@ class CityScreen extends FlameGame {
        yContribution = gridDifferenceY*VerticalGridSquareDistance;
        return xContribution + yContribution;
    */
-  
+  //gives center of square: must adjust building y position
   Vector2 _convertGridPositionToScreenPosition(Vector2 gridPosition) {
 
     double horizontalDiagonalCentre = (_diagonalHorizontalMaxGrid+ _diagonalHorizontalMinGrid)/2;
@@ -272,8 +293,8 @@ class CityScreen extends FlameGame {
     double horizontalGridDifference = (gridPosition.y-gridPosition.x)-horizontalDiagonalCentre;
     double xPosition = horizontalGridDifference*_gridSquareHorizontalSize;
     double verticalGridDifference = (gridPosition.x + gridPosition.y)-verticalDiagonalCentre;
-    double yOffset = (_gridSquareHorizontalSize*_gridSquareVerticalToHorizontalRatio)*(1-_buildingSideToGridSquareSideRatio) / 2;
-    double yPosition = verticalGridDifference*_gridSquareHorizontalSize*_gridSquareVerticalToHorizontalRatio + yOffset;
+    
+    double yPosition = -verticalGridDifference*_gridSquareHorizontalSize*_gridSquareVerticalToHorizontalRatio;
     return Vector2(xPosition, yPosition);
   }
 
