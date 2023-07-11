@@ -21,7 +21,7 @@ void main() {
   double count = 5;
   for (ArtistGlobalInfo artistGlobalInfo in artists.keys) {
     artists[artistGlobalInfo] = count.toInt();
-    count += 6;
+    count += 3;
   }
   // positionState.placeBuildings(artists);
   // var positions = positionState.getPositionsAndHeights();

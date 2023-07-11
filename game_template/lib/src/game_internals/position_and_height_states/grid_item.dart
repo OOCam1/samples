@@ -1,0 +1,6 @@
+
+
+enum GridItem {
+  road,
+  building
+}

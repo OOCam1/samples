@@ -13,6 +13,7 @@ import 'package:game_template/src/components/uniform_road_square.dart';
 import 'game_internals/models/artist_global_info.dart';
 import 'game_internals/models/genre.dart';
 import 'game_internals/position_and_height_states/genre_grouped_position_state.dart';
+import 'game_internals/position_and_height_states/grid_item.dart';
 import 'game_internals/position_and_height_states/position_state_interface.dart';
 
 ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
@@ -25,10 +26,15 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 2. make roads permanent and dynamically add them
 2. standardise heights
 3. increase definition on edges of cuboids
-4. draw roads/river
+4. improve roads/river
 3. zooooooom
 4. make sure setUpBuildings is run after addartists
-5. adjust cuboidanchor to be the center of the base - will help with road positioning
+5.adjust max based on obstacles
+6.do grid
+7.make uniform square
+8. green border squares
+9. make sure roads do not run over: they should stop when there are no buildings on either side
+10. make new obstacles push buildings but not obstacles
 */
 class CityScreen extends FlameGame {
 
@@ -38,7 +44,7 @@ class CityScreen extends FlameGame {
   final PositionStateInterface positionStateInterface = GenreGroupedPositionState();
   late double _gridSquareHorizontalSize;
   late final double _viewedHeightToActualHeightRatio;
-  static const double _cameraRadiansFromHorizontal = 80 * pi/180;
+  static const double _cameraRadiansFromHorizontal = 70 * pi/180;
   late double _gridSquareVerticalToHorizontalRatio;
   static const double _buildingSideToGridSquareSideRatio = 0.4;
 
@@ -58,9 +64,8 @@ class CityScreen extends FlameGame {
   final Set<PositionComponent> _componentsToRender = HashSet();
   final Map<Genre, Color> _genreToColor = HashMap();
   late final Map<ArtistGlobalInfo, int> _artists;
-  late final List<Set<List<int>>> _obstaclePositions;
   late final Set<List<int>> _roadPositions;
-
+  late final Map<ArtistGlobalInfo, List<int>> _buildingPositionsAfterObstacles;
 
 
   factory CityScreen(Map<ArtistGlobalInfo, int> artists) {
@@ -117,17 +122,17 @@ class CityScreen extends FlameGame {
 
     positionStateInterface.placeBuildings(_artists);
 
-    _obstaclePositions = _generateObstacleGridPositions();
-    Map<ArtistGlobalInfo, List<int>> artistPositions = positionStateInterface.getPositionsAndHeights(_obstaclePositions[0], _obstaclePositions[1]);
-    var artistPositionsList = artistPositions.values.toList();
-    artistPositionsList.sort((a,b) => (a[0].compareTo(b[0])));
-    int artistPositionsXmin = artistPositionsList[0][0];
-    assert(artistPositionsXmin == positionStateInterface.xMin);
-    artistPositionsList.sort((a,b) => (a[1].compareTo(b[1])));
-    assert(artistPositionsList[0][1] == positionStateInterface.yMin);
-    _setGridHorizontalSize(artistPositions);
-    _setUpBuildings(artistPositions);
-    _addRoads();
+    positionStateInterface.setupBuildingsAndObstacles();
+    _buildingPositionsAfterObstacles = positionStateInterface.getPositionsAndHeightsOfBuildings();
+    Map<List<int>, GridItem> gridItemPositions = positionStateInterface.getPositionsOfItems();
+    //Set<List<int>> visibleObstaclePositions = _cutDownObstaclePositionsToVisibleOnes();
+
+
+    //fix
+    _setGridHorizontalSize(_buildingPositionsAfterObstacles);
+    _setUpBuildings(_buildingPositionsAfterObstacles);
+    _setUpGridItemComponents(gridItemPositions);
+
 
   }
 
@@ -158,6 +163,25 @@ class CityScreen extends FlameGame {
 
   }
 
+  void _setUpGridItemComponents(Map<List<int>, GridItem> gridItemPositions) {
+    for (MapEntry<List<int>, GridItem> mapEntry in gridItemPositions.entries) {
+      Vector2 position = _convertGridPositionToScreenPosition(Vector2(mapEntry.key[0].toDouble(), mapEntry.key[1].toDouble()));
+      int priority = -(mapEntry.key[0] + mapEntry.key[1]);
+      GridItem itemType = mapEntry.value;
+      switch (itemType) {
+        case GridItem.building:
+          return;
+        case GridItem.road:
+          var component = UniformRoadSquare(_gridSquareHorizontalSize,
+              _gridSquareHorizontalSize*_gridSquareVerticalToHorizontalRatio,
+              position, priority);
+          _componentsToRender.add(component);
+      }
+    }
+
+
+  }
+
 
 
   //needs reworking
@@ -169,9 +193,10 @@ class CityScreen extends FlameGame {
 
   //sets the boundaries of the positions on the grid
   void _setGridExtremes(Map<ArtistGlobalInfo, List<int>> artistPositions) {
-    var positionValuesList = artistPositions.values.toList();
-
-
+    // Set<List<int>> totalObstaclePositions = _obstaclePositions[0].union(_obstaclePositions[1]);
+    var totalObstaclePositions = HashSet<List<int>>();
+    var positionValuesList = artistPositions.values.toSet().union(totalObstaclePositions).toList();
+    var buildingValuesList = artistPositions.values.toList();
     //if you look at grid diagonally, what are the top and bottom rows?
     positionValuesList.sort((a,b) => (a[0] + a[1]).compareTo(b[0] + b[1]));
     _diagonalVerticalMaxGrid = positionValuesList.last[0] + positionValuesList.last[1];
@@ -184,7 +209,7 @@ class CityScreen extends FlameGame {
 
 
     //find max height of building
-    positionValuesList.sort((a,b) => b[2].compareTo(a[2]));
+    buildingValuesList.sort((a,b) => b[2].compareTo(a[2]));
     _buildingMaxHeight = positionValuesList[0][2];
     _yMinPixel += _buildingMaxHeight*_viewedHeightToActualHeightRatio;
 
@@ -224,27 +249,62 @@ class CityScreen extends FlameGame {
   }
   
   //generates the squares in which there will be roads - randomly spaced between 3 and 6 apart
+  //pseudocode: make map of row to building positions, ordered by x coord
+  // for each
   List<Set<List<int>>> _generateRoadSquares() {
     HashSet<List<int>> verticalRoadSquares = HashSet();
     List<int> verticalRoadPositions = _generate1DRoadPositions(positionStateInterface.xMin, positionStateInterface.xMax);
     List<int> horizontalRoadPositions = _generate1DRoadPositions(positionStateInterface.yMin, positionStateInterface.yMax);
+    //Map<int, List<int>> rowToHorizontalLimits = _generate2DLimitsFrom1D(1, horizontalRoadPositions);
+    //Map<int, List<int>> columnToVerticalLimits = _generate2DLimitsFrom1D(0, verticalRoadPositions);
     for (int x in verticalRoadPositions) {
-      for (int y = positionStateInterface.yMin; y <=
-          positionStateInterface.yMax + horizontalRoadPositions.length; y ++) {
+      for (int y = positionStateInterface.yMin; y <= positionStateInterface.yMax + horizontalRoadPositions.length; y ++) {
         verticalRoadSquares.add([x, y]);
       }
     }
     HashSet<List<int>> horizontalRoadSquares = HashSet();
     for (int y in horizontalRoadPositions) {
-      for (int x = positionStateInterface.xMin; x <=
-          positionStateInterface.xMax+verticalRoadPositions.length; x ++) {
+      for (int x = positionStateInterface.xMin; x <= positionStateInterface.xMax + verticalRoadPositions.length; x ++) {
         horizontalRoadSquares.add([x, y]);
       }
     }
     _roadPositions = verticalRoadSquares.toSet().union(horizontalRoadSquares.toSet());
     return [horizontalRoadSquares, verticalRoadSquares];
   }
-  
+
+
+  //cut obstacles down so that they only exist if they are between buildings limits of one of the two adjacent rows and one of the two adjacent columns
+  //return visible positions
+  Set<List<int>> _cutDownObstaclePositionsToVisibleOnes() {
+
+    return HashSet();
+    // var totalObstaclePositions = _obstaclePositions[0].union(_obstaclePositions[1]);
+    // Map<int, List<int>> xToColumnPositions = _generate2DLimitsFrom1D(0);
+    // Map<int,List<int>> yToRowPositions = _generate2DLimitsFrom1D(1);
+    //
+    // for (List<int> position in totalObstaclePositions) {
+    //   int x = position[0];
+    //   int y = position[1];
+    //   var leftYLimits = xToColumnPositions[x-1]!;
+    //   var rightYLimits = xToColumnPositions[x+1]!;
+    //   var bottomXLimits = yToRowPositions[y-1]!;
+    //   var topXLimits = yToRowPositions[y+1]!;
+    //
+    //   bool positionInLimit(int number, List<int> limits) {
+    //     return (number>= limits[0]) || (number < limits[1]);
+    //   }
+    //
+    //   var xInXLimits = positionInLimit(x, bottomXLimits) || positionInLimit(x, topXLimits);
+    //   var yInYLimits = positionInLimit(y, leftYLimits) || positionInLimit(y, rightYLimits);
+    //   if (!(xInXLimits||yInYLimits)) {
+    //     totalObstaclePositions.remove(position);
+    //   }
+    //
+    // }
+    // return totalObstaclePositions;
+
+
+  }
   //generates 1d coords for location of road
   List<int> _generate1DRoadPositions(int minPosition, int maxPosition) {
     var random = Random();
@@ -261,9 +321,67 @@ class CityScreen extends FlameGame {
       }
       output.add(lastPosition);
     }
+
+    int minLimit = positionStateInterface.yMin;
+    int maxLimit = positionStateInterface.yMax;
+  }
+
+  //generates map from line number to min inclusive and max exclusive coords that a road will be drawn from
+  //1 for generating roadPositions along rows, and 0 for road positions along columns
+  HashMap<int, List<int>> _generate2DLimitsFrom1D(int rowOrColumn) {
+    HashMap<int, List<int>> output = HashMap();
+    var otherIndex = (rowOrColumn+1)%2;
+    HashMap<int, List<int>> buildingLineToPosition = HashMap();
+    //generate line to position of building positions
+    for (List<int> position in _buildingPositionsAfterObstacles.values) {
+      if (!buildingLineToPosition.containsKey(position[rowOrColumn])){
+        buildingLineToPosition[position[rowOrColumn]] = [];
+      }
+      buildingLineToPosition[position[rowOrColumn]]!.add(position[otherIndex]);
+    }
+
+    int minLimit = positionStateInterface.xMin;
+    int maxLimit = positionStateInterface.xMax;
+    if (rowOrColumn == 0) {
+      minLimit = positionStateInterface.yMin;
+      maxLimit = positionStateInterface.yMax;
+    }
+
+    //generate limits for each 1d line
+    for (int location = minLimit; location <= maxLimit; location ++) {
+      //set up the locations of the two adjacent lines, to check for adjacent buildings
+      List<int> leftLineLocations = [];
+      if (buildingLineToPosition.containsKey(location-1)) {
+        leftLineLocations = buildingLineToPosition[location-1]!;
+      }
+      List<int> rightLineLocations = [];
+      if (buildingLineToPosition.containsKey(location+1)) {
+        rightLineLocations = buildingLineToPosition[location+1]!;
+      }
+      int roadMin = maxLimit;
+      int roadMax = maxLimit;
+      for (int square = minLimit; square <= maxLimit; square ++) {
+        if (leftLineLocations.contains(square) || rightLineLocations.contains(square)) {
+          roadMin = square;
+          break;
+        }
+      }
+      for (int square = roadMin + 1; square <= maxLimit; square ++) {
+        if (!leftLineLocations.contains(square) && !rightLineLocations.contains(square)) {
+          roadMax = square;
+          break;
+        }
+      }
+
+      var limits = [roadMin, roadMax];
+      output[location] = limits;
+    }
+    return output;
   }
 
   void _addRoads() {
+
+    //cull roads to necessary ones
     for (List<int> roadPosition in _roadPositions) {
       RoadSquare roadSquare = UniformRoadSquare(_gridSquareHorizontalSize,
         _gridSquareHorizontalSize*_gridSquareVerticalToHorizontalRatio,
@@ -274,18 +392,6 @@ class CityScreen extends FlameGame {
     }
   }
 
-  /*
-  pseudocode:
-    calculate xScreenDistanceContribution from x grid coordinate:
-      xContribution = gridDifferenceX*HorizontalGridSquareDistance
-      yContribution = gridDifferenceY*VerticalGridSquareDistance
-      return xContribution - yContribution
-    calculate yScreenDistance:
-       xContribution = gridDifferenceX * VerticalGridSquareDistance;
-       yContribution = gridDifferenceY*VerticalGridSquareDistance;
-       return xContribution + yContribution;
-   */
-  //gives center of square: must adjust building y position
   Vector2 _convertGridPositionToScreenPosition(Vector2 gridPosition) {
 
     double horizontalDiagonalCentre = (_diagonalHorizontalMaxGrid+ _diagonalHorizontalMinGrid)/2;
