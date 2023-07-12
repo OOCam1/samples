@@ -2,5 +2,6 @@
 
 enum GridItem {
   road,
-  building
+  building,
+  boundary
 }

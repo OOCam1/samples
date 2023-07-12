@@ -107,6 +107,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
       _addRoads();
     }
     _cutObstacleSquaresToWithinBorder();
+    _addBoundaries();
 
   }
 
@@ -265,6 +266,20 @@ class GenreGroupedPositionState implements PositionStateInterface {
     shift horizontally according to horizontalObstacles in its new y position:
         calculate offset, but if you land on a
    */
+
+
+  void _addBoundaries() {
+    for (Pixel pixel in _obstacleAdjustedBuildingMap.keys) {
+      for (int x = pixel.x-_borderSize; x <= pixel.x+_borderSize; x ++) {
+        for (int y = pixel.y - _borderSize; y <= pixel.y + _borderSize; y ++) {
+          var newPosition = Pixel(x,y);
+          if (!_obstacleAdjustedPositionMap.containsKey(newPosition)) {
+            _obstacleAdjustedPositionMap[newPosition] = GridItem.boundary;
+          }
+        }
+      }
+    }
+  }
 
 
   //returns [[xminBuildingPosition, xMaxBuildingPosition], [yminBuildingPosition, yMaxBuildingPosition]]

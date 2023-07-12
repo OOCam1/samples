@@ -114,7 +114,7 @@ class PositionGenre {
   void organiseByHeight(Set<Building> buildings) {
     var buildingList = buildings.toList();
     buildingList.sort((a,b) => -a.height.compareTo(b.height));
-    HashMap<int, Set<Pixel>> availablePositions = HashMap();
+    SplayTreeMap<int, Set<Pixel>> availablePositions = SplayTreeMap();
     for (Pixel pixel in _occupied) {
       var distanceSquare = _getDistanceSquare(pixel);
       if (!availablePositions.containsKey(distanceSquare)) {
@@ -122,6 +122,7 @@ class PositionGenre {
       }
       availablePositions[distanceSquare]!.add(pixel);
     }
+
     for (Building building in buildingList) {
       for (Set<Pixel> pixelSet in availablePositions.values ) {
         if (pixelSet.isNotEmpty) {

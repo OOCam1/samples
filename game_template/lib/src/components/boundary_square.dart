@@ -1,16 +1,14 @@
 
-
 import 'dart:ui';
 
 import 'package:flame/components.dart';
-import 'package:game_template/src/components/road_square.dart';
-import 'package:game_template/src/components/uniform_grid_square.dart';
 
-class UniformRoadSquare extends RoadSquare {
+import 'uniform_grid_square.dart';
 
+class BoundarySquare extends PositionComponent {
 
   late final PositionComponent _base;
-  static const Color _baseColor = Color.fromRGBO(24, 52, 82, 1.0);
+  static const Color _baseColor = Color.fromRGBO(20, 112, 6, 1.0);
   @override
   Future<void> onLoad() async {
     add(_base);
@@ -18,7 +16,7 @@ class UniformRoadSquare extends RoadSquare {
   // @override
   // Anchor get anchor => Anchor.center;
 
-  UniformRoadSquare(double gridSquareHorizontalSize, double gridSquareVerticalSize, Vector2 position, int priority) {
+  BoundarySquare(double gridSquareHorizontalSize, double gridSquareVerticalSize, Vector2 position, int priority) {
     this.position = position;
     this.priority = priority;
     anchor = Anchor.center;
@@ -34,5 +32,4 @@ class UniformRoadSquare extends RoadSquare {
     // _base = PolygonComponent.relative(relation, parentSize: size, paint: basePaint);
     _base = UniformGridSquare(Vector2(width/2, height/2), _baseColor, gridSquareHorizontalSize, gridSquareVerticalSize);
   }
-
 }
