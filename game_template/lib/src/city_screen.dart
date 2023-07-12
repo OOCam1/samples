@@ -14,6 +14,7 @@ import 'game_internals/models/artist_global_info.dart';
 import 'game_internals/models/genre.dart';
 import 'game_internals/position_and_height_states/genre_grouped_position_state.dart';
 import 'game_internals/position_and_height_states/grid_item.dart';
+import 'game_internals/position_and_height_states/pixel.dart';
 import 'game_internals/position_and_height_states/position_state_interface.dart';
 
 ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
@@ -35,6 +36,8 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 8. green border squares
 9. make sure roads do not run over: they should stop when there are no buildings on either side
 10. make new obstacles push buildings but not obstacles
+11. obstacles push up and down and left/right not just up or right
+12. max and min in position interface are unclear and misused based on obstacle adjusted or not
 */
 class CityScreen extends FlameGame {
 
@@ -44,7 +47,7 @@ class CityScreen extends FlameGame {
   final PositionStateInterface positionStateInterface = GenreGroupedPositionState();
   late double _gridSquareHorizontalSize;
   late final double _viewedHeightToActualHeightRatio;
-  static const double _cameraRadiansFromHorizontal = 70 * pi/180;
+  static const double _cameraRadiansFromHorizontal = 60 * pi/180;
   late double _gridSquareVerticalToHorizontalRatio;
   static const double _buildingSideToGridSquareSideRatio = 0.4;
 
@@ -77,6 +80,47 @@ class CityScreen extends FlameGame {
     _viewedHeightToActualHeightRatio = cos(_cameraRadiansFromHorizontal);
 
   }
+
+
+  void display(Map<List<int>, GridItem> positions) {
+  HashMap<Pixel, GridItem> positionToItem = HashMap();
+  var xCoordMin = 0;
+  var xCoordMax = 0;
+  var yCoordMin = 0;
+  var yCoordMax = 0;
+  for (var mapEntry in positions.entries) {
+    var position = mapEntry.key;
+    var pixelPosition = Pixel(position[0], position[1]);
+    xCoordMin = min(xCoordMin, position[0]);
+    xCoordMax = max(xCoordMax, position[0]);
+    yCoordMin = min(yCoordMin, position[1]);
+    yCoordMax = max(yCoordMax, position[1]);
+    positionToItem[pixelPosition] = mapEntry.value;
+  }
+  for (int i = 0; i < 5; i ++) {
+    print('');
+  }
+
+  for (int y = yCoordMax; y >= yCoordMin; y --) {
+    String str = "";
+    for (int x = xCoordMin; x <= xCoordMax; x ++) {
+      if (positionToItem.containsKey(Pixel(x,y))) {
+        GridItem value = positionToItem[Pixel(x,y)]!;
+        String gd;
+        switch(value) {
+          case GridItem.building:
+            gd = 'b ';
+          case GridItem.road:
+            gd = 'r ';
+        }
+        str += "|" + gd + " |";
+      }
+      else{str += "|  |";}
+
+    }
+    print(str);
+  }
+}
 
   @override
   Future<void> onLoad() async {
@@ -122,9 +166,18 @@ class CityScreen extends FlameGame {
 
     positionStateInterface.placeBuildings(_artists);
 
-    positionStateInterface.setupBuildingsAndObstacles();
+    positionStateInterface.setupBuildingsAndObstacles(roads: true);
     _buildingPositionsAfterObstacles = positionStateInterface.getPositionsAndHeightsOfBuildings();
+    for (List<int> position in _buildingPositionsAfterObstacles.values) {
+      print(position);
+    }
+    print("stuff");
     Map<List<int>, GridItem> gridItemPositions = positionStateInterface.getPositionsOfItems();
+    for (MapEntry<List<int>, GridItem> mapEntry in gridItemPositions.entries) {
+      if (mapEntry.value == GridItem.building) {
+        print(mapEntry.key);
+      }
+    }
     //Set<List<int>> visibleObstaclePositions = _cutDownObstaclePositionsToVisibleOnes();
 
 
@@ -132,7 +185,7 @@ class CityScreen extends FlameGame {
     _setGridHorizontalSize(_buildingPositionsAfterObstacles);
     _setUpBuildings(_buildingPositionsAfterObstacles);
     _setUpGridItemComponents(gridItemPositions);
-
+    display(gridItemPositions);
 
   }
 
@@ -166,11 +219,11 @@ class CityScreen extends FlameGame {
   void _setUpGridItemComponents(Map<List<int>, GridItem> gridItemPositions) {
     for (MapEntry<List<int>, GridItem> mapEntry in gridItemPositions.entries) {
       Vector2 position = _convertGridPositionToScreenPosition(Vector2(mapEntry.key[0].toDouble(), mapEntry.key[1].toDouble()));
-      int priority = -(mapEntry.key[0] + mapEntry.key[1]);
+      int priority = _minPriority-1-(mapEntry.key[0] + mapEntry.key[1]);
       GridItem itemType = mapEntry.value;
       switch (itemType) {
         case GridItem.building:
-          return;
+          break;
         case GridItem.road:
           var component = UniformRoadSquare(_gridSquareHorizontalSize,
               _gridSquareHorizontalSize*_gridSquareVerticalToHorizontalRatio,
@@ -396,7 +449,7 @@ class CityScreen extends FlameGame {
 
     double horizontalDiagonalCentre = (_diagonalHorizontalMaxGrid+ _diagonalHorizontalMinGrid)/2;
     double verticalDiagonalCentre = (_diagonalVerticalMaxGrid+_diagonalVerticalMinGrid)/2;
-    double horizontalGridDifference = (gridPosition.y-gridPosition.x)-horizontalDiagonalCentre;
+    double horizontalGridDifference = (-gridPosition.y+gridPosition.x)-horizontalDiagonalCentre;
     double xPosition = horizontalGridDifference*_gridSquareHorizontalSize;
     double verticalGridDifference = (gridPosition.x + gridPosition.y)-verticalDiagonalCentre;
     

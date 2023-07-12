@@ -33,6 +33,9 @@ class Pixel {
     return (pixel.x == _x && pixel.y == _y);
   }
 
+  List<int> toList() {
+    return [x,y];
+  }
   Set<Pixel> getAdjacents() {
     Set<Pixel> output = HashSet();
     output.add(Pixel(x-1, y));

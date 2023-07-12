@@ -16,6 +16,9 @@ class GenreGroupedPositionState implements PositionStateInterface {
 
   factory GenreGroupedPositionState() {return _instance;}
 
+  static const int _minDistanceBetweenRoads = 3;
+  static const int _maxDistanceBetweenRoads = 5;
+  static const int _borderSize = 1;
   //map of location to building
   final Map<Pixel, Building> _purePositionMap = HashMap();
   //map of artist to corresponding building
@@ -85,16 +88,25 @@ class GenreGroupedPositionState implements PositionStateInterface {
 
   @override
   Map<List<int>, GridItem> getPositionsOfItems() {
-    // TODO: implement getPositionsOfItems
-    throw UnimplementedError();
+    HashMap<List<int>, GridItem> output = HashMap();
+    for (MapEntry<Pixel, GridItem> mapEntry in _obstacleAdjustedPositionMap.entries) {
+      output[mapEntry.key.toList()] = mapEntry.value;
+    }
+    return output;
   }
 
+
+  //place roads
   @override
-  void setupBuildingsAndObstacles([bool roads = false]) {
+  void setupBuildingsAndObstacles({bool roads = false}) {
     for (MapEntry<Pixel, Building> mapEntry in _purePositionMap.entries) {
       _obstacleAdjustedBuildingMap[mapEntry.key] = mapEntry.value;
       _obstacleAdjustedPositionMap[mapEntry.key] = GridItem.building;
     }
+    if (roads) {
+      _addRoads();
+    }
+    _cutObstacleSquaresToWithinBorder();
 
   }
 
@@ -253,6 +265,161 @@ class GenreGroupedPositionState implements PositionStateInterface {
     shift horizontally according to horizontalObstacles in its new y position:
         calculate offset, but if you land on a
    */
+
+
+  //returns [[xminBuildingPosition, xMaxBuildingPosition], [yminBuildingPosition, yMaxBuildingPosition]]
+  void _addRoads() {
+    List<Set<Pixel>> roadSquares = _generateRoadSquares();
+    _adjustPositionsForObstacles(roadSquares[0], roadSquares[1]);
+    for (Set<Pixel> pixelSet in roadSquares) {
+      for (Pixel pixel in pixelSet) {
+        _obstacleAdjustedPositionMap[pixel] = GridItem.road;
+      }
+    }
+  }
+
+  List<List<int>> _getExtremes(Iterable<Pixel> positions) {
+    if (positions.isEmpty) {
+      return [[0,0], [0,0]];
+    }
+    List<Pixel> positionList = positions.toList();
+    int xMin = positionList[0].x;
+    int xMax = positionList[0].x;
+    int yMin = positionList[0].y;
+    int yMax = positionList[0].y;
+
+    for (Pixel pixel in positionList) {
+      xMin = min(xMin, pixel.x);
+      xMax = max(xMax, pixel.x);
+      yMin = min(yMin, pixel.y);
+      yMax = max(yMax, pixel.y);
+    }
+    return [[xMin, xMax], [yMin, yMax]];
+  }
+
+  //generates 1d coords for locations of road
+  List<int> _generate1DRoadPositions(int minPosition, int maxPosition) {
+    var random = Random();
+    List<int> output = [];
+    var lastPosition = minPosition;
+    var maxPositionOfRoad = maxPosition -2;
+
+    //lmao get fucked
+    while (true) {
+      var interval = random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) + _minDistanceBetweenRoads;
+      lastPosition += interval;
+      if (lastPosition > maxPositionOfRoad) {
+        return output;
+      }
+      output.add(lastPosition);
+    }
+
+  }
+
+  List<Set<Pixel>> _generateRoadSquares() {
+    HashSet<Pixel> verticalRoadSquares = HashSet();
+    List<List<int>> currentLimits = _getExtremes(_obstacleAdjustedBuildingMap.keys);
+    int xMinWithObstacles = currentLimits[0][0];
+    int xMaxWithObstacles = currentLimits[0][1];
+    int yMinWithObstacles = currentLimits[1][0];
+    int yMaxWithObstacles = currentLimits[1][1];
+    List<int> verticalRoadPositions = _generate1DRoadPositions(xMinWithObstacles, xMaxWithObstacles);
+    List<int> horizontalRoadPositions = _generate1DRoadPositions(yMinWithObstacles, yMaxWithObstacles);
+    //Map<int, List<int>> rowToHorizontalLimits = _generate2DLimitsFrom1D(1, horizontalRoadPositions);
+    //Map<int, List<int>> columnToVerticalLimits = _generate2DLimitsFrom1D(0, verticalRoadPositions);
+    for (int x in verticalRoadPositions) {
+      for (int y = yMinWithObstacles-_borderSize; y <= yMaxWithObstacles + horizontalRoadPositions.length + _borderSize; y ++) {
+        verticalRoadSquares.add(Pixel(x,y));
+      }
+    }
+    HashSet<Pixel> horizontalRoadSquares = HashSet();
+    for (int y in horizontalRoadPositions) {
+      for (int x = xMinWithObstacles-_borderSize; x <= xMaxWithObstacles + verticalRoadPositions.length + _borderSize; x ++) {
+        horizontalRoadSquares.add(Pixel(x,y));
+      }
+    }
+    verticalRoadSquares.toSet().union(horizontalRoadSquares.toSet());
+    return [horizontalRoadSquares, verticalRoadSquares];
+  }
+
+  HashMap<int, List<int>> _generate2DLimitsForEachLine(int rowOrColumn) {
+    if (rowOrColumn != 0 && rowOrColumn != 1) {throw Error();}
+    HashMap<int, List<int>> output = HashMap();
+    var otherIndex = (rowOrColumn+1)%2;
+    HashMap<int, List<int>> buildingLineToPosition = HashMap();
+    //generate line to position of building positions
+
+    List<int> minLimits = [0,0];
+    List<int> maxLimits = [0,0];
+    var currentLimits = _getExtremes(_obstacleAdjustedPositionMap.keys);
+    minLimits = [currentLimits[0][0], currentLimits[1][0]];
+    maxLimits = [currentLimits[0][1], currentLimits[1][1]];
+    // print('buildings');
+    // for (Pixel position in _obstacleAdjustedBuildingMap.keys) {
+    //
+    // }
+
+    for (Pixel position in _obstacleAdjustedPositionMap.keys) {
+      if (_obstacleAdjustedPositionMap[position] == GridItem.building) {
+
+      }
+    }
+    //empty rows/columns should still have a key that points to empty list, rather than no key
+    for (Pixel position in _obstacleAdjustedBuildingMap.keys) {
+
+      if (!buildingLineToPosition.containsKey(position.toList()[rowOrColumn])){
+        buildingLineToPosition[position.toList()[rowOrColumn]] = [];
+      }
+      buildingLineToPosition[position.toList()[rowOrColumn]]!.add(position.toList()[otherIndex]);
+    }
+
+
+    for (int line = minLimits[rowOrColumn]-1; line <= maxLimits[rowOrColumn] +1; line ++) {
+      if (!buildingLineToPosition.containsKey(line)) {
+        output[line] = [10,-10];
+      }
+      else {
+        List<int> buildingPositions = buildingLineToPosition[line]!;
+        var minBuildingPosition = buildingPositions.reduce(min);
+        var maxBuildingPosition = buildingPositions.reduce(max);
+        output[line] = [minBuildingPosition, maxBuildingPosition];
+      }
+    }
+    
+    return output;
+  }
+
+  void _cutObstacleSquaresToWithinBorder() {
+
+    Map<int, List<int>> xToColumnPositions = _generate2DLimitsForEachLine(0);
+    Map<int,List<int>> yToRowPositions = _generate2DLimitsForEachLine(1);
+    HashSet<Pixel> toRemove = HashSet();
+    for (MapEntry<Pixel, GridItem> position in _obstacleAdjustedPositionMap.entries) {
+      if (position.value != GridItem.building) {
+        int x = position.key.x;
+        int y = position.key.y;
+
+        var leftYLimits = xToColumnPositions[x - 1]!;
+        var rightYLimits = xToColumnPositions[x + 1]!;
+        var bottomXLimits = yToRowPositions[y - 1]!;
+        var topXLimits = yToRowPositions[y + 1]!;
+
+        bool positionInLimit(int number, List<int> limits) {
+          return ((number >= limits[0] - _borderSize) && (number <= limits[1] + _borderSize));
+        }
+
+        var xInXLimits = positionInLimit(x, bottomXLimits) || positionInLimit(x, topXLimits);
+        var yInYLimits = positionInLimit(y, leftYLimits) || positionInLimit(y, rightYLimits);
+        if (!(xInXLimits || yInYLimits)) {
+          toRemove.add(position.key);
+
+        }
+      }
+    }
+    for (Pixel p in toRemove) {_obstacleAdjustedPositionMap.remove(p);}
+
+  }
+
 
   //horizontal obstacles actually must be the union of vertical obstacles and horizontal obstacles since we shift vertically first
   //and want to avoid shifting buildings horizontally into vertical obstacles.
