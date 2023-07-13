@@ -13,15 +13,15 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 
 void main() {
   int numArtists = 75;
-  HashMap<ArtistGlobalInfo, int> artists = HashMap();
+  HashMap<ArtistGlobalInfo, double> artists = HashMap();
   for (int i = 0; i <numArtists; i += 1) {
     artists[generateTestArtistGlobalInfo(i%10)] = 0;
   }
   print(artists.length);
-  double count = 5;
+  double count = 1;
   for (ArtistGlobalInfo artistGlobalInfo in artists.keys) {
-    artists[artistGlobalInfo] = count.toInt();
-    count += 3;
+    artists[artistGlobalInfo] = count;
+    count += 0.1;
   }
   // positionState.placeBuildings(artists);
   // var positions = positionState.getPositionsAndHeights();

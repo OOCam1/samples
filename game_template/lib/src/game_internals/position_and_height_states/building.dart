@@ -7,7 +7,7 @@ class Building {
   late Pixel _position;
   late final ArtistGlobalInfo _artistGlobalInfo;
   late final PositionGenre _positionGenre;
-  late int _height;
+  late double _height;
   Building(this._artistGlobalInfo, this._height, this._positionGenre) {
     if (_height <= 0) {
       throw Exception("Height of building under 0");
@@ -20,10 +20,10 @@ class Building {
 
   Pixel get position {return _position;}
 
-  void setHeight(int height) {
+  void setHeight(double height) {
     _height = height;
   }
-  int get height => _height;
+  double get height => _height;
   ArtistGlobalInfo get artistGlobalInfo => _artistGlobalInfo;
   PositionGenre get positionGenre => _positionGenre;
 

@@ -10,6 +10,7 @@ import 'package:game_template/src/components/boundary_square.dart';
 import 'package:game_template/src/components/cuboid_building_asset.dart';
 
 import 'package:game_template/src/components/uniform_road_square.dart';
+import 'package:game_template/src/game_internals/models/building_info.dart';
 
 import 'components/building_base_square.dart';
 import 'game_internals/models/artist_global_info.dart';
@@ -63,15 +64,15 @@ class CityScreen extends FlameGame {
   late int _diagonalVerticalMinGrid;
   late int _diagonalHorizontalMaxGrid;
   late int _diagonalHorizontalMinGrid;
-  late int _buildingMaxHeight;
+  late double _buildingMaxHeight;
   int _minPriority = 0;
   final Set<PositionComponent> _componentsToRender = HashSet();
   final Map<Genre, Color> _genreToColor = HashMap();
-  late final Map<ArtistGlobalInfo, int> _artists;
-  late final Map<ArtistGlobalInfo, List<int>> _buildingPositionsAfterObstacles;
+  late final Map<ArtistGlobalInfo, double> _artists;
+  late final Set<BuildingInfo> _buildingPositionsAfterObstacles;
 
 
-  factory CityScreen(Map<ArtistGlobalInfo, int> artists) {
+  factory CityScreen(Map<ArtistGlobalInfo, double> artists) {
     _instance._artists = artists;
     return _instance;
   }
@@ -151,8 +152,8 @@ class CityScreen extends FlameGame {
   }
 
 
-  void addBuildings(Map<ArtistGlobalInfo, int> artists) {
-    for (int height in artists.values) {
+  void addBuildings(Map<ArtistGlobalInfo, double> artists) {
+    for (double height in artists.values) {
       if (height <= 0) {
         throw Exception('Height assigned to artist should be greater than 0');
       }
@@ -169,10 +170,7 @@ class CityScreen extends FlameGame {
 
     positionStateInterface.setupBuildingsAndObstacles(roads: true);
     _buildingPositionsAfterObstacles = positionStateInterface.getPositionsAndHeightsOfBuildings();
-    for (List<int> position in _buildingPositionsAfterObstacles.values) {
-      print(position);
-    }
-    print("stuff");
+
     Map<List<int>, GridItem> gridItemPositions = positionStateInterface.getPositionsOfItems();
     for (MapEntry<List<int>, GridItem> mapEntry in gridItemPositions.entries) {
       if (mapEntry.value == GridItem.building) {
@@ -183,14 +181,19 @@ class CityScreen extends FlameGame {
 
 
     //fix
-    _setGridHorizontalSize(_buildingPositionsAfterObstacles);
-    _setUpBuildings(_buildingPositionsAfterObstacles);
+
+    HashMap<ArtistGlobalInfo, List<num>> artistToPosition = HashMap();
+    for (BuildingInfo buildingInfo in _buildingPositionsAfterObstacles) {
+      artistToPosition[buildingInfo.artistGlobalInfo] = [buildingInfo.x, buildingInfo.y, buildingInfo.height];
+    }
+    _setGridHorizontalSize(artistToPosition);
+    _setUpBuildings(artistToPosition);
     _setUpGridItemComponents(gridItemPositions);
     display(gridItemPositions);
 
   }
 
-  void _setUpBuildings(Map<ArtistGlobalInfo, List<int>> artistPositions) {
+  void _setUpBuildings(Map<ArtistGlobalInfo, List<num>> artistPositions) {
     for (var buildingPositionEntry in artistPositions.entries) {
       if (buildingPositionEntry.value.length != 3) {
         throw Exception("Map entry for building creation does not have length 3 - x, y, height");
@@ -204,7 +207,10 @@ class CityScreen extends FlameGame {
       //so that obstacles can be rendered behind all buildings
       _minPriority = min(priority, _minPriority);
 
-      double height = buildingPositionEntry.value[2] * _viewedHeightToActualHeightRatio;
+
+      //need to make sure height scales with grid size and angle of view, so multiplied by these
+      double height = buildingPositionEntry.value[2] * _viewedHeightToActualHeightRatio*_gridSquareHorizontalSize;
+
       //create new buildingAsset
       _componentsToRender.add(CuboidBuildingAsset(positionOfCenterOfSquare,
           height,
@@ -254,33 +260,47 @@ class CityScreen extends FlameGame {
     cameraComponent.viewfinder.zoom = zoomValue;
   }
 
+  /*
+  PSEUDOCODE:
+  calculate vertical size of grid and horizontal grid if grid square size was 1
+  calculate max visible height of a building if gridsize was 1 (multiplied by viewing angle)
+  add it to vertical size to get vertical world size
+  calculate yScreenSize/verticalworldsize and xScreenSize/horizontalWorldSize
+  the min of these two is scale ratio (gridSquareHorizontalSize).
+
+  now need to calculate screen position of centre square:
+    if limit was horizontal, (0,0)
+    else:
+      (0,visibleBuildingMaxHeight/2)   (just trust me bro)
+
+   */
 
   //sets the boundaries of the positions on the grid
-  void _setGridExtremes(Map<ArtistGlobalInfo, List<int>> artistPositions) {
+  void _setGridExtremes(Map<ArtistGlobalInfo, List<num>> artistPositions) {
     // Set<List<int>> totalObstaclePositions = _obstaclePositions[0].union(_obstaclePositions[1]);
-    var totalObstaclePositions = HashSet<List<int>>();
+    var totalObstaclePositions = HashSet<List<num>>();
     var positionValuesList = artistPositions.values.toSet().union(totalObstaclePositions).toList();
     var buildingValuesList = artistPositions.values.toList();
     //if you look at grid diagonally, what are the top and bottom rows?
     positionValuesList.sort((a,b) => (a[0] + a[1]).compareTo(b[0] + b[1]));
-    _diagonalVerticalMaxGrid = positionValuesList.last[0] + positionValuesList.last[1];
-    _diagonalVerticalMinGrid = positionValuesList[0][0] + positionValuesList[0][1];
+    _diagonalVerticalMaxGrid = positionValuesList.last[0].toInt() + positionValuesList.last[1].toInt();
+    _diagonalVerticalMinGrid = positionValuesList[0][0].toInt() + positionValuesList[0][1].toInt();
 
     //if you look at grid diagonally, what are left and right columns?
     positionValuesList.sort((a,b) => (a[1] - a[0]).compareTo(b[1]-b[0]));
-    _diagonalHorizontalMaxGrid = positionValuesList.last[1] - positionValuesList.last[0];
-    _diagonalHorizontalMinGrid = positionValuesList[0][1] - positionValuesList[0][0];
+    _diagonalHorizontalMaxGrid = (positionValuesList.last[1] - positionValuesList.last[0]).toInt();
+    _diagonalHorizontalMinGrid = (positionValuesList[0][1] - positionValuesList[0][0]).toInt();
 
 
     //find max height of building
     buildingValuesList.sort((a,b) => b[2].compareTo(a[2]));
-    _buildingMaxHeight = positionValuesList[0][2];
+    _buildingMaxHeight = positionValuesList[0][2].toDouble()*_gridSquareHorizontalSize;
     _yMinPixel += _buildingMaxHeight*_viewedHeightToActualHeightRatio;
 
   }
 
   //set the horizontal size of a grid square based on grid extremes
-  void _setGridHorizontalSize(Map<ArtistGlobalInfo, List<int>> artistPositions) {
+  void _setGridHorizontalSize(Map<ArtistGlobalInfo, List<num>> artistPositions) {
     _setGridExtremes(artistPositions);
     int numOfSquaresFromTopToBottom = _diagonalVerticalMaxGrid-_diagonalVerticalMinGrid + 1;
     int numOfSquaresFromLeftToRight = _diagonalHorizontalMaxGrid-_diagonalHorizontalMinGrid + 1;

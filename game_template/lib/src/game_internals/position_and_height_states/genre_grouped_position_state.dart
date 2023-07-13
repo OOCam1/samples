@@ -5,6 +5,7 @@ import 'package:game_template/src/game_internals/models/artist_global_info.dart'
 import 'package:game_template/src/game_internals/models/genre.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/position_state_interface.dart';
+import '../models/building_info.dart';
 import 'building.dart';
 import 'grid_item.dart';
 import 'position_genre.dart';
@@ -34,7 +35,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   //Central square
   final Pixel _origin = Pixel(0,0);
 
-  late int _xMin;
+  late int _xPureBuildingMin;
   late int _xMax;
   late int _yMin;
   late int _yMax;
@@ -56,14 +57,14 @@ class GenreGroupedPositionState implements PositionStateInterface {
     var newSet = HashSet<Pixel>();
     newSet.add(_origin);
     _adjacentEmpties[0] = newSet;
-    _xMin = _origin.x;
+    _xPureBuildingMin = _origin.x;
     _xMax = _origin.x;
     _yMin = _origin.y;
     _yMax = _origin.y;
   }
 
   @override
-  void changeHeight(ArtistGlobalInfo artistGlobalInfo, int height) {
+  void changeHeight(ArtistGlobalInfo artistGlobalInfo, double height) {
     if (!_artistGlobalInfoToBuildingMap.containsKey(artistGlobalInfo)) {
       throw Exception("Artist info not in position state");
     }
@@ -77,11 +78,11 @@ class GenreGroupedPositionState implements PositionStateInterface {
 
 
   @override
-  Map<ArtistGlobalInfo, List<int>> getPositionsAndHeightsOfBuildings() {
-    Map<ArtistGlobalInfo, List<int>> output = HashMap();
+  Set<BuildingInfo> getPositionsAndHeightsOfBuildings() {
+    HashSet<BuildingInfo> output = HashSet();
     for (MapEntry<Pixel, Building> mapEntry in _obstacleAdjustedBuildingMap.entries) {
-      var mapValue = [mapEntry.key.x, mapEntry.key.y, mapEntry.value.height];
-      output[mapEntry.value.artistGlobalInfo] = mapValue;
+      output.add(BuildingInfo.fromBuilding(mapEntry.value, mapEntry.key.toList()));
+
     }
     return output;
   }
@@ -98,40 +99,23 @@ class GenreGroupedPositionState implements PositionStateInterface {
 
   //place roads
   @override
-  void setupBuildingsAndObstacles({bool roads = false}) {
+  void setupBuildingsAndObstacles({bool roads = false, bool border = false }) {
+    if (_purePositionMap.isEmpty) {return;}
     for (MapEntry<Pixel, Building> mapEntry in _purePositionMap.entries) {
       _obstacleAdjustedBuildingMap[mapEntry.key] = mapEntry.value;
       _obstacleAdjustedPositionMap[mapEntry.key] = GridItem.building;
     }
-    if (roads) {
-      _addRoads();
-    }
+    if (roads) {_addRoads();}
     _cutObstacleSquaresToWithinBorder();
-    _addBoundaries();
+    if (border) {_addBoundaries();}
+
 
   }
 
-  // //returns map from ArtistGlobalInfo to [x,y,height]
-  // Map<ArtistGlobalInfo, List<int>> getPositionsAndHeights([Iterable<List<int>>? verticalObstacles, Iterable<List<int>>? horizontalObstacles ]) {
-  //   Set<List<int>> verticals;
-  //   Set<List<int>> horizontals;
-  //   if (verticalObstacles == null) {verticals = HashSet();}
-  //   else {verticals = verticalObstacles.toSet();}
-  //   if (horizontalObstacles == null) {horizontals = HashSet();}
-  //   else {horizontals = horizontalObstacles.toSet();}
-  //   Map<Building, Pixel> buildingToAdjustedPixel = _adjustPositionsForObstacles(verticals, horizontals);
-  //   HashMap<ArtistGlobalInfo, List<int>> output = HashMap();
-  //   for (MapEntry<Building, Pixel> mapEntry in buildingToAdjustedPixel.entries) {
-  //     output[mapEntry.key.artistGlobalInfo] = [mapEntry.value.x,mapEntry.value.y, mapEntry.key.height];
-  //   }
-  //
-  //   return output;
-  // }
-
   @override
-  void placeBuildings(Map<ArtistGlobalInfo, int> buildings) {
-    HashMap<Genre, HashMap<ArtistGlobalInfo, int>> districtBuildings = HashMap();
-    for (MapEntry<ArtistGlobalInfo, int> mapEntry in buildings.entries) {
+  void placeBuildings(Map<ArtistGlobalInfo, double> buildings) {
+    HashMap<Genre, HashMap<ArtistGlobalInfo, double>> districtBuildings = HashMap();
+    for (MapEntry<ArtistGlobalInfo, double> mapEntry in buildings.entries) {
       var artistGlobalInfo = mapEntry.key;
       var primaryGenre = artistGlobalInfo.primaryGenre;
       if (!districtBuildings.containsKey(artistGlobalInfo.primaryGenre)) {
@@ -139,9 +123,9 @@ class GenreGroupedPositionState implements PositionStateInterface {
       }
       districtBuildings[primaryGenre]![artistGlobalInfo] = mapEntry.value;
     }
-    for (MapEntry<Genre, HashMap<ArtistGlobalInfo, int>> mapEntry in districtBuildings.entries) {
+    for (MapEntry<Genre, HashMap<ArtistGlobalInfo, double>> mapEntry in districtBuildings.entries) {
 
-      for (MapEntry<ArtistGlobalInfo, int> artistMapEntry in mapEntry.value.entries) {
+      for (MapEntry<ArtistGlobalInfo, double> artistMapEntry in mapEntry.value.entries) {
         placeNewBuilding(artistMapEntry.key, artistMapEntry.value);
       }
     }
@@ -155,7 +139,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
       genreToBuildings[positionGenre]!.add(mapEntry.value);
     }
     var genreList = genreToBuildings.entries.toList();
-    genreList.sort((a,b) => (b.value.length.compareTo(a.value.length)));
+    genreList.sort((a,b) => (-a.value.length.compareTo(b.value.length)));
 
     for (MapEntry<PositionGenre, HashSet<Building>> mapEntry in genreList) {
       mapEntry.key.organiseByHeight(mapEntry.value);
@@ -163,7 +147,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   }
 
   @override
-  void placeNewBuilding(ArtistGlobalInfo artistGlobalInfo, int height) {
+  void placeNewBuilding(ArtistGlobalInfo artistGlobalInfo, double height) {
     if (_artistGlobalInfoToBuildingMap.containsKey(artistGlobalInfo)) {
       throw Exception("Artist already in position state");
     }
@@ -183,6 +167,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
     previousGenres.add(building.positionGenre);
     bool squareOccupied = false;
     Pixel position = building.positionGenre.findPosition(previousGenres);
+
     //placeholder variable: should never run with oldBuilding set to building
     Building oldBuilding = building;
     if (_purePositionMap.containsKey(position)) {
@@ -210,7 +195,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   }
 
   void _updateExtremes(Pixel pixel) {
-    _xMin = min(_xMin, pixel.x);
+    _xPureBuildingMin = min(_xPureBuildingMin, pixel.x);
     _xMax = max(_xMax, pixel.x);
     _yMin = min(_yMin, pixel.y);
     _yMax = max(_yMax, pixel.y);
@@ -544,7 +529,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   @override
   int get xMax => _xMax;
   @override
-  int get xMin => _xMin;
+  int get xMin => _xPureBuildingMin;
 
   @override
   int get yMin => _yMin;
