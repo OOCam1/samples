@@ -33,11 +33,6 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 4. improve roads/river
 3. zooooooom
 4. make sure setUpBuildings is run after addartists
-5.adjust max based on obstacles
-6.do grid
-7.make uniform square
-8. green border squares
-9. make sure roads do not run over: they should stop when there are no buildings on either side
 10. make new obstacles push buildings but not obstacles
 11. obstacles push up and down and left/right not just up or right
 12. max and min in position interface are unclear and misused based on obstacle adjusted or not
@@ -51,7 +46,7 @@ class CityScreen extends FlameGame {
   final PositionStateInterface positionStateInterface = GenreGroupedPositionState();
   late double _gridSquareHorizontalSize;
   late final double _viewedHeightToActualHeightRatio;
-  static const double _cameraRadiansFromHorizontal = 60 * pi/180;
+  static const double _cameraRadiansFromHorizontal = 50 * pi/180;
   late double _gridSquareVerticalToHorizontalRatio;
   static const double _buildingSideToGridSquareSideRatio = 0.4;
 
@@ -60,6 +55,8 @@ class CityScreen extends FlameGame {
   late double _yMaxPixel;
   late double _xMinPixel;
   late double _yMinPixel;
+
+  late Vector2 _screenPositionOfCenterGridSquare;
   late int _diagonalVerticalMaxGrid;
   late int _diagonalVerticalMinGrid;
   late int _diagonalHorizontalMaxGrid;
@@ -136,9 +133,9 @@ class CityScreen extends FlameGame {
 
     await addAll([cameraComponent, world]);
     _xMaxPixel = size.x/2;
-    _yMaxPixel = size.y/2;
+    _yMaxPixel = size.y/2 -20;
     _xMinPixel = -_xMaxPixel;
-    _yMinPixel = -_yMaxPixel;
+    _yMinPixel = -size.y/2;
     //Rect visibleRect = cameraComponent.visibleWorldRect;
 
 
@@ -168,25 +165,24 @@ class CityScreen extends FlameGame {
 
     positionStateInterface.placeBuildings(_artists);
 
-    positionStateInterface.setupBuildingsAndObstacles(roads: true);
+    positionStateInterface.setupBuildingsAndObstacles(roads: true, border: true);
     _buildingPositionsAfterObstacles = positionStateInterface.getPositionsAndHeightsOfBuildings();
-
     Map<List<int>, GridItem> gridItemPositions = positionStateInterface.getPositionsOfItems();
+
     for (MapEntry<List<int>, GridItem> mapEntry in gridItemPositions.entries) {
       if (mapEntry.value == GridItem.building) {
         print(mapEntry.key);
       }
     }
+
     //Set<List<int>> visibleObstaclePositions = _cutDownObstaclePositionsToVisibleOnes();
-
-
     //fix
 
     HashMap<ArtistGlobalInfo, List<num>> artistToPosition = HashMap();
     for (BuildingInfo buildingInfo in _buildingPositionsAfterObstacles) {
       artistToPosition[buildingInfo.artistGlobalInfo] = [buildingInfo.x, buildingInfo.y, buildingInfo.height];
     }
-    _setGridHorizontalSize(artistToPosition);
+    _setGridHorizontalSize(artistToPosition, gridItemPositions.keys);
     _setUpBuildings(artistToPosition);
     _setUpGridItemComponents(gridItemPositions);
     display(gridItemPositions);
@@ -260,6 +256,27 @@ class CityScreen extends FlameGame {
     cameraComponent.viewfinder.zoom = zoomValue;
   }
 
+
+
+  //sets the boundaries of the positions on the grid
+  void _setGridExtremes(Iterable<List<int>> itemPositions) {
+    // Set<List<int>> totalObstaclePositions = _obstaclePositions[0].union(_obstaclePositions[1]);
+
+    var positionValuesList = itemPositions.toList();
+    //if you look at grid diagonally, what are the top and bottom rows?
+    positionValuesList.sort((a,b) => (a[0] + a[1]).compareTo(b[0] + b[1]));
+    _diagonalVerticalMaxGrid = positionValuesList.last[0].toInt() + positionValuesList.last[1].toInt();
+    _diagonalVerticalMinGrid = positionValuesList[0][0].toInt() + positionValuesList[0][1].toInt();
+
+    //if you look at grid diagonally, what are left and right columns?
+    positionValuesList.sort((a,b) => (a[1] - a[0]).compareTo(b[1]-b[0]));
+    _diagonalHorizontalMaxGrid = (positionValuesList.last[1] - positionValuesList.last[0]).toInt();
+    _diagonalHorizontalMinGrid = (positionValuesList[0][1] - positionValuesList[0][0]).toInt();
+
+
+
+  }
+
   /*
   PSEUDOCODE:
   calculate vertical size of grid and horizontal grid if grid square size was 1
@@ -275,39 +292,35 @@ class CityScreen extends FlameGame {
 
    */
 
-  //sets the boundaries of the positions on the grid
-  void _setGridExtremes(Map<ArtistGlobalInfo, List<num>> artistPositions) {
-    // Set<List<int>> totalObstaclePositions = _obstaclePositions[0].union(_obstaclePositions[1]);
-    var totalObstaclePositions = HashSet<List<num>>();
-    var positionValuesList = artistPositions.values.toSet().union(totalObstaclePositions).toList();
-    var buildingValuesList = artistPositions.values.toList();
-    //if you look at grid diagonally, what are the top and bottom rows?
-    positionValuesList.sort((a,b) => (a[0] + a[1]).compareTo(b[0] + b[1]));
-    _diagonalVerticalMaxGrid = positionValuesList.last[0].toInt() + positionValuesList.last[1].toInt();
-    _diagonalVerticalMinGrid = positionValuesList[0][0].toInt() + positionValuesList[0][1].toInt();
-
-    //if you look at grid diagonally, what are left and right columns?
-    positionValuesList.sort((a,b) => (a[1] - a[0]).compareTo(b[1]-b[0]));
-    _diagonalHorizontalMaxGrid = (positionValuesList.last[1] - positionValuesList.last[0]).toInt();
-    _diagonalHorizontalMinGrid = (positionValuesList[0][1] - positionValuesList[0][0]).toInt();
-
+  //set the horizontal size of a grid square based on grid extremes
+  void _setGridHorizontalSize(Map<ArtistGlobalInfo, List<num>> artistPositions, Iterable<List<int>> itemPositions) {
+    _setGridExtremes(itemPositions);
 
     //find max height of building
+    var buildingValuesList = artistPositions.values.toList();
     buildingValuesList.sort((a,b) => b[2].compareTo(a[2]));
-    _buildingMaxHeight = positionValuesList[0][2].toDouble()*_gridSquareHorizontalSize;
-    _yMinPixel += _buildingMaxHeight*_viewedHeightToActualHeightRatio;
+    _buildingMaxHeight = buildingValuesList[0][2].toDouble();
 
-  }
-
-  //set the horizontal size of a grid square based on grid extremes
-  void _setGridHorizontalSize(Map<ArtistGlobalInfo, List<num>> artistPositions) {
-    _setGridExtremes(artistPositions);
     int numOfSquaresFromTopToBottom = _diagonalVerticalMaxGrid-_diagonalVerticalMinGrid + 1;
     int numOfSquaresFromLeftToRight = _diagonalHorizontalMaxGrid-_diagonalHorizontalMinGrid + 1;
-    var horizontalLimit = (_xMaxPixel-_xMinPixel)/(numOfSquaresFromLeftToRight+1);
-    var verticalLimit = (_yMaxPixel-_yMinPixel)/(numOfSquaresFromTopToBottom+1)*_gridSquareVerticalToHorizontalRatio;
 
-    _gridSquareHorizontalSize = min(horizontalLimit, verticalLimit);
+    //calculates the size of the rectangle the world would fit in if gridSquareHorizontalSize was 1
+    var horizontalWorldRelativeSize = numOfSquaresFromLeftToRight + 1;
+    var verticalWorldRelativeSize = (numOfSquaresFromTopToBottom+1)*_gridSquareVerticalToHorizontalRatio + _buildingMaxHeight*_viewedHeightToActualHeightRatio;
+
+    var horizontalLimitedGridHorizontalSize = (_xMaxPixel-_xMinPixel)/horizontalWorldRelativeSize;
+    var verticalLimitedGridHorizontalSize = (_yMaxPixel-_yMinPixel)/verticalWorldRelativeSize;
+
+    if (horizontalLimitedGridHorizontalSize <= verticalLimitedGridHorizontalSize) {
+      _gridSquareHorizontalSize = horizontalLimitedGridHorizontalSize;
+      _screenPositionOfCenterGridSquare = Vector2(0,0);
+    }
+    else {
+      _gridSquareHorizontalSize = verticalLimitedGridHorizontalSize;
+      _screenPositionOfCenterGridSquare = Vector2(0, _buildingMaxHeight*_gridSquareHorizontalSize*_viewedHeightToActualHeightRatio/2);
+    }
+
+
   }
 
   //assign a colour to a an artist based on GENRE
@@ -336,7 +349,7 @@ class CityScreen extends FlameGame {
     double verticalGridDifference = (gridPosition.x + gridPosition.y)-verticalDiagonalCentre;
     
     double yPosition = -verticalGridDifference*_gridSquareHorizontalSize*_gridSquareVerticalToHorizontalRatio;
-    return Vector2(xPosition, yPosition);
+    return _screenPositionOfCenterGridSquare + Vector2(xPosition, yPosition);
   }
 
 

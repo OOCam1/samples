@@ -13,7 +13,7 @@ abstract class PositionStateInterface {
   void changeHeight(ArtistGlobalInfo artistGlobalInfo, double height);
   void clear();
   Map<List<int>, GridItem> getPositionsOfItems();
-  void setupBuildingsAndObstacles({bool roads = false});
+  void setupBuildingsAndObstacles({bool roads = false, bool border = false});
   //List contains x, then y, then height
   Set<BuildingInfo> getPositionsAndHeightsOfBuildings();
 
