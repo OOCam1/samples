@@ -24,7 +24,7 @@ class CuboidBuildingAsset extends BuildingAsset {
   late final PolygonComponent top;
   late double _cuboidHeight;
   late final ArtistGlobalInfo _artistGlobalInfo;
-  static const double _rightDarkerThanLeftPercentage = 0.4;
+  static const double _rightDarkerThanLeftPercentage = 0.6;
   late double _horizontalDifferenceFromCenterToSideCorner;
   late double _heightDifferenceFromCenterToSideCorner;
   late Color _leftColor;

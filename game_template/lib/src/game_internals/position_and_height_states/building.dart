@@ -1,3 +1,4 @@
+import 'package:game_template/src/game_internals/models/positioned_building_info.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/position_genre.dart';
 
@@ -16,6 +17,10 @@ class Building {
 
   void setPosition(Pixel position) {
     _position = position;
+  }
+
+  PositionedBuildingInfo toPositionedBuildingInfo() {
+
   }
 
   Pixel get position {return _position;}

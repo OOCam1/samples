@@ -1,10 +1,7 @@
 
 
 import 'dart:ui';
-
 import 'package:flame/components.dart';
-
-
 import 'uniform_grid_square.dart';
 
 class BuildingBaseSquare extends PositionComponent {

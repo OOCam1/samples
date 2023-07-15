@@ -5,7 +5,7 @@ import 'package:game_template/src/game_internals/models/artist_global_info.dart'
 import 'package:game_template/src/game_internals/models/genre.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/position_state_interface.dart';
-import '../models/building_info.dart';
+import '../models/positioned_building_info.dart';
 import 'building.dart';
 import 'grid_item.dart';
 import 'position_genre.dart';
@@ -78,10 +78,10 @@ class GenreGroupedPositionState implements PositionStateInterface {
 
 
   @override
-  Set<BuildingInfo> getPositionsAndHeightsOfBuildings() {
-    HashSet<BuildingInfo> output = HashSet();
+  Set<PositionedBuildingInfo> getPositionsAndHeightsOfBuildings() {
+    HashSet<PositionedBuildingInfo> output = HashSet();
     for (MapEntry<Pixel, Building> mapEntry in _obstacleAdjustedBuildingMap.entries) {
-      output.add(BuildingInfo.fromBuilding(mapEntry.value, mapEntry.key.toList()));
+      output.add(PositionedBuildingInfo.fromBuilding(mapEntry.value, mapEntry.key.toList()));
 
     }
     return output;

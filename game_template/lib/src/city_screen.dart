@@ -10,7 +10,7 @@ import 'package:game_template/src/components/boundary_square.dart';
 import 'package:game_template/src/components/cuboid_building_asset.dart';
 
 import 'package:game_template/src/components/uniform_road_square.dart';
-import 'package:game_template/src/game_internals/models/building_info.dart';
+import 'package:game_template/src/game_internals/models/positioned_building_info.dart';
 
 import 'components/building_base_square.dart';
 import 'game_internals/models/artist_global_info.dart';
@@ -26,18 +26,20 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 }
 
 /*TODO:
-1. Refactor positioning on screen code into new class
+1. (Refactor positioning on screen code into new class)
+buildings go off screen if angle low
 2. make roads permanent and dynamically add them
-2. standardise heights
 3. increase definition on edges of cuboids
 4. improve roads/river
 3. zooooooom
 4. make sure setUpBuildings is run after addartists
 10. make new obstacles push buildings but not obstacles
 11. obstacles push up and down and left/right not just up or right
-12. max and min in position interface are unclear and misused based on obstacle adjusted or not
-13. sort out verticalGridSize - should not have to do horizontal*ratio all the time
+12. (max and min in position interface are unclear and misused based on obstacle adjusted or not)
+13. (sort out verticalGridSize - should not have to do horizontal*ratio all the time)
 */
+
+
 class CityScreen extends FlameGame {
 
   static final CityScreen _instance = CityScreen._internal();
@@ -66,7 +68,7 @@ class CityScreen extends FlameGame {
   final Set<PositionComponent> _componentsToRender = HashSet();
   final Map<Genre, Color> _genreToColor = HashMap();
   late final Map<ArtistGlobalInfo, double> _artists;
-  late final Set<BuildingInfo> _buildingPositionsAfterObstacles;
+  late final Set<PositionedBuildingInfo> _buildingPositionsAfterObstacles;
 
 
   factory CityScreen(Map<ArtistGlobalInfo, double> artists) {
@@ -179,7 +181,7 @@ class CityScreen extends FlameGame {
     //fix
 
     HashMap<ArtistGlobalInfo, List<num>> artistToPosition = HashMap();
-    for (BuildingInfo buildingInfo in _buildingPositionsAfterObstacles) {
+    for (PositionedBuildingInfo buildingInfo in _buildingPositionsAfterObstacles) {
       artistToPosition[buildingInfo.artistGlobalInfo] = [buildingInfo.x, buildingInfo.y, buildingInfo.height];
     }
     _setGridHorizontalSize(artistToPosition, gridItemPositions.keys);
@@ -272,8 +274,6 @@ class CityScreen extends FlameGame {
     positionValuesList.sort((a,b) => (a[1] - a[0]).compareTo(b[1]-b[0]));
     _diagonalHorizontalMaxGrid = (positionValuesList.last[1] - positionValuesList.last[0]).toInt();
     _diagonalHorizontalMinGrid = (positionValuesList[0][1] - positionValuesList[0][0]).toInt();
-
-
 
   }
 
