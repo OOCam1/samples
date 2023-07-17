@@ -7,12 +7,24 @@ import '../position_and_height_states/building.dart';
 import 'unpositioned_building_info.dart';
 
 
-class PositionedBuildingInfo extends BuildingInfo{
-  late final int x;
-  late final int y;
-  late BuildingInfo unpositionedBuildingInfo;
+class PositionedBuildingInfo implements BuildingInfo{
+  late int x;
+  late  int y;
+  late final BuildingInfo _buildingInfo;
 
-  PositionedBuildingInfo(super.height, super.artistGlobalInfo, this.x, this.y);
+  @override
+  double get height => _buildingInfo.height;
+
+  @override
+  set height(double value) { _buildingInfo.height = value;}
+
+  @override
+  ArtistGlobalInfo get artistGlobalInfo => _buildingInfo.artistGlobalInfo;
+
+  PositionedBuildingInfo(this._buildingInfo, this.x, this.y);
+
+
+
 
 
 

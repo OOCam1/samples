@@ -1,7 +1,7 @@
-
-
 enum GridItem {
   road,
   building,
-  boundary
+  boundary;
+
+  bool isBuilding() => this == building;
 }

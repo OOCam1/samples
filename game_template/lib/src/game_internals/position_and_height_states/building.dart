@@ -3,14 +3,17 @@ import 'package:game_template/src/game_internals/position_and_height_states/pixe
 import 'package:game_template/src/game_internals/position_and_height_states/position_genre.dart';
 
 import '../models/artist_global_info.dart';
+import '../models/unpositioned_building_info.dart';
+import 'grid_item.dart';
 
 class Building {
   late Pixel _position;
-  late final ArtistGlobalInfo _artistGlobalInfo;
+  final BuildingInfo _buildingInfo;
+
   late final PositionGenre _positionGenre;
-  late double _height;
-  Building(this._artistGlobalInfo, this._height, this._positionGenre) {
-    if (_height <= 0) {
+
+  Building(this._buildingInfo, this._positionGenre) {
+    if (_buildingInfo.height <= 0) {
       throw Exception("Height of building under 0");
     }
   }
@@ -19,17 +22,18 @@ class Building {
     _position = position;
   }
 
-  PositionedBuildingInfo toPositionedBuildingInfo() {
-
+  PositionedBuildingInfo toPositionedBuildingInfo(int x, int y) {
+    return PositionedBuildingInfo(_buildingInfo, x, y);
   }
 
-  Pixel get position {return _position;}
+  GridItem toGridItem() => GridItem.building;
 
-  void setHeight(double height) {
-    _height = height;
+  Pixel get position {
+    return _position;
   }
-  double get height => _height;
-  ArtistGlobalInfo get artistGlobalInfo => _artistGlobalInfo;
+
+  BuildingInfo get buildingInfo => _buildingInfo;
+  double get height => _buildingInfo.height;
+  ArtistGlobalInfo get artistGlobalInfo => _buildingInfo.artistGlobalInfo;
   PositionGenre get positionGenre => _positionGenre;
-
 }

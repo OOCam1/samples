@@ -1,5 +1,3 @@
-
-
 import 'dart:collection';
 
 class Pixel {
@@ -15,7 +13,7 @@ class Pixel {
       pixels[x] = newYMap;
       return newPixel;
     }
-    if(!pixels[x]!.containsKey(y)) {
+    if (!pixels[x]!.containsKey(y)) {
       var newPixel = Pixel._internal(x, y);
       pixels[x]![y] = newPixel;
       return newPixel;
@@ -23,26 +21,32 @@ class Pixel {
     return pixels[x]![y]!;
   }
 
+  factory Pixel.fromList(List<int> list) {
+    if (list.length != 2) {
+      throw Exception("Length of pixel list should be 2");
+    }
+    return Pixel(list[0], list[1]);
+  }
+
   Pixel._internal(this._x, this._y);
 
   int get x => _x;
   int get y => _y;
 
-  @override
   bool equals(Pixel pixel) {
     return (pixel.x == _x && pixel.y == _y);
   }
 
   List<int> toList() {
-    return [x,y];
-  }
-  Set<Pixel> getAdjacents() {
-    Set<Pixel> output = HashSet();
-    output.add(Pixel(x-1, y));
-    output.add(Pixel(x+1, y));
-    output.add(Pixel(x, y+1));
-    output.add(Pixel(x, y-1));
-    return output;
+    return [x, y];
   }
 
+  Set<Pixel> getAdjacents() {
+    Set<Pixel> output = HashSet();
+    output.add(Pixel(x - 1, y));
+    output.add(Pixel(x + 1, y));
+    output.add(Pixel(x, y + 1));
+    output.add(Pixel(x, y - 1));
+    return output;
+  }
 }
