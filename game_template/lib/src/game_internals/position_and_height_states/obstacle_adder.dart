@@ -26,11 +26,12 @@ class ObstacleAdder {
   final HashSet<int> _upPushingRoadYPositions = HashSet();
   final HashSet<int> _downPushingRoadYPositions = HashSet();
 
+  final HashSet<Pixel> _leftPushingObstaclePositions = HashSet();
+  final HashSet<Pixel> _rightPushingObstaclePositions = HashSet();
+  final HashSet<Pixel> _downPushingObstaclePositions = HashSet();
+  final HashSet<Pixel> _upPushingObstaclePositions = HashSet();
+
   final Pixel _origin;
-  late int _xPureBuildingMin;
-  late int _xPureBuildingMax;
-  late int _yPureBuildingMin;
-  late int _yPureBuildingMax;
 
   ObstacleAdder(Map<Pixel, Building> purePositionMap, this._origin) {
     _obstacleAdjustedBuildingMap.addAll(purePositionMap);
@@ -61,7 +62,7 @@ class ObstacleAdder {
   void _setup() {
     setupDone = true;
     if (_roadsEnabled) {
-      // _addRoads();
+      _addRoads();
     }
     _cutObstacleSquaresToWithinBorder();
     if (_boundariesEnabled) {
@@ -82,16 +83,43 @@ class ObstacleAdder {
     }
   }
 
-//returns [[xminBuildingPosition, xMaxBuildingPosition], [yminBuildingPosition, yMaxBuildingPosition]]
-  // void _addRoads() {
-  //   List<Set<Pixel>> roadSquares = _generateRoadSquares();
-  //   _adjustPositionsForObstacles(roadSquares[0], roadSquares[1]);
-  //   for (Set<Pixel> pixelSet in roadSquares) {
-  //     for (Pixel pixel in pixelSet) {
-  //       _obstacleAdjustedPositionMap[pixel] = GridItem.road;
-  //     }
-  //   }
-  // }
+  void _addRoads() {
+    List<List<Set<Pixel>>> roadSquares = _generateRoadSquares();
+    _addObstaclesToSystem(roadSquares[0][0], roadSquares[0][1],
+        roadSquares[1][0], roadSquares[1][1]);
+    for (var setList in roadSquares) {
+      for (Set<Pixel> pixelSet in setList) {
+        for (Pixel pixel in pixelSet) {
+          _obstacleAdjustedPositionMap[pixel] = GridItem.road;
+        }
+      }
+    }
+  }
+
+  void _addObstaclesToSystem(
+      Iterable<Pixel> downPushingObstaclePositionsToAdd,
+      Iterable<Pixel> upPushingObstaclePositionsToAdd,
+      Iterable<Pixel> leftPushingObstaclePositionsToAdd,
+      Iterable<Pixel> rightPushingObstaclePositionsToAdd) {
+    var existingSets = [
+      _downPushingObstaclePositions,
+      _upPushingObstaclePositions,
+      _leftPushingObstaclePositions,
+      _rightPushingObstaclePositions
+    ];
+    List<Set<Pixel>> newSets = [
+      downPushingObstaclePositionsToAdd.toSet(),
+      upPushingObstaclePositionsToAdd.toSet(),
+      leftPushingObstaclePositionsToAdd.toSet(),
+      rightPushingObstaclePositionsToAdd.toSet()
+    ];
+    for (int i = 0; i < 4; i++) {
+      newSets[i] = newSets[i].difference(existingSets[i]);
+      existingSets[i].addAll(newSets[i]);
+    }
+    _adjustPositionsFromObstacles(
+        newSets[0], newSets[1], newSets[2], newSets[3]);
+  }
 
   List<List<int>> _getExtremes(Iterable<Pixel> positions) {
     if (positions.isEmpty) {
@@ -141,21 +169,32 @@ class ObstacleAdder {
     var lastPosition = minPosition;
     var maxPositionOfRoad = maxPosition;
 
+    var interval =
+        random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) +
+            _minDistanceBetweenRoads;
+    lastPosition += interval;
     //lmao get fucked
     while (lastPosition < decreaseUpperLimit) {
-      var interval =
-          random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) +
-              _minDistanceBetweenRoads;
-      lastPosition += interval;
       decreasePushingPositions.add(lastPosition);
-    }
-    lastPosition = increaseLowerLimit;
-    while (lastPosition <= maxPositionOfRoad) {
-      var interval =
+      interval =
           random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) +
               _minDistanceBetweenRoads;
       lastPosition += interval;
+    }
+
+    if (increasePushingPositions.isNotEmpty) {
+      interval =
+          random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) +
+              _minDistanceBetweenRoads;
+      lastPosition = increaseLowerLimit + interval;
+    }
+
+    while (lastPosition < maxPositionOfRoad) {
       increasePushingPositions.add(lastPosition);
+      interval =
+          random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) +
+              _minDistanceBetweenRoads;
+      lastPosition += interval;
     }
     return [decreasePushingPositions, increasePushingPositions];
   }
@@ -308,15 +347,15 @@ class ObstacleAdder {
   /// produce map from old pixel to new pixel, then adjust the buildings in positionMap and buildingMap
 
   void _adjustPositionsFromObstacles(
-      Set<Pixel> downPushingObstacles,
-      Set<Pixel> upPushingObstacles,
-      Set<Pixel> leftPushingObstacles,
-      Set<Pixel> rightPushingObstacles) {
+      Set<Pixel> newDownPushingObstacles,
+      Set<Pixel> newUpPushingObstacles,
+      Set<Pixel> newLeftPushingObstacles,
+      Set<Pixel> newRightPushingObstacles) {
     Map<Pixel, Pixel> oldToNew = _getPurePixelToAdjustedPixel(
-        downPushingObstacles,
-        upPushingObstacles,
-        leftPushingObstacles,
-        rightPushingObstacles);
+        newDownPushingObstacles,
+        newUpPushingObstacles,
+        newLeftPushingObstacles,
+        newRightPushingObstacles);
 
     HashMap<Pixel, Building> newBuildingMap = HashMap();
     HashMap<Pixel, GridItem> newPositionMap = HashMap();
@@ -338,40 +377,42 @@ class ObstacleAdder {
   }
 
   HashMap<Pixel, Pixel> _getPurePixelToAdjustedPixel(
-      Set<Pixel> downPushingObstacles,
-      Set<Pixel> upPushingObstacles,
-      Set<Pixel> leftPushingObstacles,
-      Set<Pixel> rightPushingObstacles) {
-    Set<Pixel> totalObstaclePositions = downPushingObstacles
-        .union(upPushingObstacles)
-        .union(leftPushingObstacles)
-        .union(rightPushingObstacles);
-    for (MapEntry<Pixel, GridItem> mapEntry
-        in _obstacleAdjustedPositionMap.entries) {
-      if (mapEntry.value.isBuilding()) {
-        totalObstaclePositions.add(mapEntry.key);
-      }
-    }
+      Set<Pixel> newDownPushingObstacles,
+      Set<Pixel> newUpPushingObstacles,
+      Set<Pixel> newLeftPushingObstacles,
+      Set<Pixel> newRightPushingObstacles) {
+    Set<Pixel> totalObstaclePositions = _downPushingObstaclePositions
+        .union(_upPushingObstaclePositions)
+        .union(_leftPushingObstaclePositions)
+        .union(_rightPushingObstaclePositions);
 
     HashMap<Pixel, Pixel> adjustPositionsAlongOneAxis(
         Set<Pixel> pixels,
         int axis,
         Set<Pixel> decreasePushObstacles,
-        Set<Pixel> increasePushObstacles) {
+        Set<Pixel> increasePushObstacles,
+        Set<Pixel> totalObstaclesToAvoid) {
+      var otherAxis = (axis + 1) % 2;
       HashMap<Pixel, Pixel> output = HashMap();
       HashMap<int, Set<int>> axisCoordToIncreasePositions =
-          _generatePositionToSetPositions(increasePushObstacles, axis);
+          _generatePositionToSetPositions(increasePushObstacles, otherAxis);
       HashMap<int, Set<int>> axisCoordToDecreasePositions =
-          _generatePositionToSetPositions(decreasePushObstacles, axis);
+          _generatePositionToSetPositions(decreasePushObstacles, otherAxis);
 
       for (Pixel pixel in pixels) {
-        int indexPosition = pixel.toList()[axis];
+        int indexPosition = pixel.toList()[otherAxis];
+
+        Set<int> decreasePositions =
+            axisCoordToDecreasePositions[indexPosition] ?? HashSet();
+
+        Set<int> increasePositions =
+            axisCoordToIncreasePositions[indexPosition] ?? HashSet();
+
         int offset = _calculateBuildingPositionOffsetFromObstacles(
-            axis,
-            axisCoordToDecreasePositions[indexPosition]!,
-            axisCoordToIncreasePositions[indexPosition]!);
+            pixel.toList()[axis], decreasePositions, increasePositions);
+
         Pixel newPixel = _shiftPixelOverBuildings(
-            totalObstaclePositions, pixel, offset, axis);
+            totalObstaclesToAvoid, pixel, offset, axis);
         output[pixel] = newPixel;
       }
 
@@ -387,14 +428,20 @@ class ObstacleAdder {
 
     HashMap<Pixel, Pixel> currentToHorizontallyAdjusted =
         adjustPositionsAlongOneAxis(
-            pixelsToChange, 0, leftPushingObstacles, rightPushingObstacles);
+            pixelsToChange,
+            0,
+            newLeftPushingObstacles,
+            newRightPushingObstacles,
+            _leftPushingObstaclePositions
+                .union(_rightPushingObstaclePositions));
 
     HashMap<Pixel, Pixel> horizontallyAdjustedToFullyAdjusted =
         adjustPositionsAlongOneAxis(
             currentToHorizontallyAdjusted.values.toSet(),
             1,
-            downPushingObstacles,
-            upPushingObstacles);
+            newDownPushingObstacles,
+            newUpPushingObstacles,
+            totalObstaclePositions);
 
     HashMap<Pixel, Pixel> oldBuildingPixelToNew = HashMap();
     for (MapEntry<Pixel, Pixel> mapEntry
@@ -435,14 +482,13 @@ class ObstacleAdder {
       Set<Pixel> obstaclePositions, Pixel oldPixel, int offset, int coords) {
     var increment = (offset >= 0) ? 1 : -1;
     var currentPixel = oldPixel;
-    for (int count = 1; count <= offset.abs(); count += 1) {
+    var count = 0;
+    while (count < offset.abs() && obstaclePositions.contains(currentPixel)) {
       var newPixelList = currentPixel.toList();
       newPixelList[coords] += increment;
       currentPixel = Pixel.fromList(newPixelList);
-      while (obstaclePositions.contains(currentPixel)) {
-        newPixelList = currentPixel.toList();
-        newPixelList[coords] += increment;
-        currentPixel = Pixel.fromList(newPixelList);
+      if (!obstaclePositions.contains(currentPixel)) {
+        count++;
       }
     }
     return currentPixel;

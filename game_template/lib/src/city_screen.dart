@@ -29,14 +29,11 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 /*TODO:
 1. (Refactor positioning on screen code into new class)
 buildings go off screen if angle low
-2. make roads permanent and dynamically add them
+2. obstacle adder doesnt yet cope with new buildings
 3. increase definition on edges of cuboids
 4. improve roads/river
 3. zooooooom
 4. make sure setUpBuildings is run after addartists
-10. make new obstacles push buildings but not obstacles
-11. obstacles push up and down and left/right not just up or right
-12. (max and min in position interface are unclear and misused based on obstacle adjusted or not)
 13. (sort out verticalGridSize - should not have to do horizontal*ratio all the time)
 */
 

@@ -13,7 +13,7 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 }
 
 void main() {
-  int numArtists = 75;
+  int numArtists = 100;
   HashMap<ArtistGlobalInfo, double> artists = HashMap();
   HashSet<BuildingInfo> buildingInfos = HashSet();
   for (int i = 0; i < numArtists; i += 1) {
