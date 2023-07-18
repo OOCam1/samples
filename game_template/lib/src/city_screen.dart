@@ -29,11 +29,9 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 /*TODO:
 1. (Refactor positioning on screen code into new class)
 buildings go off screen if angle low
-2. obstacle adder doesnt yet cope with new buildings
 3. increase definition on edges of cuboids
 4. improve roads/river
 3. zooooooom
-4. make sure setUpBuildings is run after addartists
 13. (sort out verticalGridSize - should not have to do horizontal*ratio all the time)
 */
 
@@ -63,11 +61,11 @@ class CityScreen extends FlameGame {
   int _minPriority = 0;
   final Set<PositionComponent> _componentsToRender = HashSet();
   final Map<Genre, Color> _genreToColor = HashMap();
-  late final Set<BuildingInfo> _buildingInfos;
-  late final Set<PositionedBuildingInfo> _buildingPositionsAfterObstacles;
+  final Set<BuildingInfo> _buildingInfos = HashSet();
+  Set<PositionedBuildingInfo> _buildingPositionsAfterObstacles = HashSet();
+  Map<List<int>, GridItem> _gridItemPositions = HashMap();
 
-  factory CityScreen(Set<BuildingInfo> buildingInfos) {
-    _instance._buildingInfos = buildingInfos;
+  factory CityScreen() {
     return _instance;
   }
   CityScreen._internal() {
@@ -128,9 +126,9 @@ class CityScreen extends FlameGame {
     _yMaxPixel = size.y / 2 - 20;
     _xMinPixel = -_xMaxPixel;
     _yMinPixel = -size.y / 2;
-    //Rect visibleRect = cameraComponent.visibleWorldRect;
 
     _setUpAssets();
+    //Rect visibleRect = cameraComponent.visibleWorldRect;
     await world.addAll(_componentsToRender);
 
     // var target = CuboidBuildingAsset(Vector2(0,0), 200, generateTestArtistGlobalInfo(1),20, 10, Colors.red, 0 );
@@ -138,29 +136,31 @@ class CityScreen extends FlameGame {
     print('done');
   }
 
-  void addBuildings(Iterable<BuildingInfo> buildingInfos) {
-    for (BuildingInfo buildingInfo in buildingInfos) {
+  void addBuildings(Iterable<BuildingInfo> newBuildingInfos) {
+    for (BuildingInfo buildingInfo in newBuildingInfos) {
       if (buildingInfo.height <= 0) {
         throw Exception('Height assigned to artist should be greater than 0');
       }
     }
-    _buildingInfos.addAll(buildingInfos);
-    //we will need to run _setUpBuildings at some point
+    var newBuildingInfoSet =
+        newBuildingInfos.toSet().difference(_buildingInfos);
+    _buildingInfos.addAll(newBuildingInfos);
+
+    _setBuildingPositions(newBuildingInfoSet);
+  }
+
+  void _setBuildingPositions(Set<BuildingInfo> newBuildingInfoSet) {
+    positionStateInterface.placeBuildings(newBuildingInfoSet);
+
+    _buildingPositionsAfterObstacles =
+        positionStateInterface.getPositionsAndHeightsOfBuildings();
+
+    _gridItemPositions = positionStateInterface.getPositionsOfItems();
   }
 
   //Places buildings in grid positions, then sets each of their positions and heights, creating building components
   //takes an argument of a map from ArtistGlobalInfo to a list containing (in order) x grid Position, y grid Position, height
   void _setUpAssets() {
-    positionStateInterface.placeBuildings(_buildingInfos);
-
-    _buildingPositionsAfterObstacles =
-        positionStateInterface.getPositionsAndHeightsOfBuildings();
-    Map<List<int>, GridItem> gridItemPositions =
-        positionStateInterface.getPositionsOfItems();
-
-    //Set<List<int>> visibleObstaclePositions = _cutDownObstaclePositionsToVisibleOnes();
-    //fix
-
     HashMap<ArtistGlobalInfo, List<num>> artistToPosition = HashMap();
     for (PositionedBuildingInfo buildingInfo
         in _buildingPositionsAfterObstacles) {
@@ -170,10 +170,10 @@ class CityScreen extends FlameGame {
         buildingInfo.height
       ];
     }
-    _setGridHorizontalSize(artistToPosition, gridItemPositions.keys);
+    _setGridHorizontalSize(artistToPosition, _gridItemPositions.keys);
     _setUpBuildings(artistToPosition);
-    _setUpGridItemComponents(gridItemPositions);
-    display(gridItemPositions);
+    _setUpGridItemComponents(_gridItemPositions);
+    display(_gridItemPositions);
   }
 
   void _setUpBuildings(Map<ArtistGlobalInfo, List<num>> artistPositions) {

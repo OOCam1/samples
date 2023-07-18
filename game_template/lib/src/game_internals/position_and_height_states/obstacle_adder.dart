@@ -17,7 +17,6 @@ class ObstacleAdder {
   static const int _borderSize = 1;
   static const _roadsEnabled = true;
   static const _boundariesEnabled = true;
-  bool setupDone = false;
 
   final Map<Pixel, GridItem> _obstacleAdjustedPositionMap = HashMap();
   final Map<Pixel, Building> _obstacleAdjustedBuildingMap = HashMap();
@@ -49,17 +48,23 @@ class ObstacleAdder {
   }
 
   void setup(Map<Pixel, Building> purePositionMap) {
+    _leftPushingObstaclePositions.clear();
+    _rightPushingObstaclePositions.clear();
+    _upPushingObstaclePositions.clear();
+    _downPushingObstaclePositions.clear();
+    _obstacleAdjustedBuildingMap.clear();
     _obstacleAdjustedBuildingMap.addAll(purePositionMap);
+    _obstacleAdjustedPositionMap.clear();
     for (var mapEntry in purePositionMap.entries) {
       _obstacleAdjustedPositionMap[mapEntry.key] = mapEntry.value.toGridItem();
     }
     if (_roadsEnabled) {
       _addRoads();
     }
-    // _cutObstacleSquaresToWithinBorder();
-    // if (_boundariesEnabled) {
-    //   _addBoundaries();
-    // }
+    _cutObstacleSquaresToWithinBorder();
+    if (_boundariesEnabled) {
+      _addBoundaries();
+    }
 
     assert(purePositionMap.length == _obstacleAdjustedBuildingMap.length);
     for (Pixel p in _obstacleAdjustedBuildingMap.keys) {
@@ -150,8 +155,7 @@ class ObstacleAdder {
 
   //generates 1d coords for locations of road based on current road positions
   //axis = 0 for x coords of roads, axis = 1 for y coords of roads
-  List<Iterable<int>> _generate1DRoadPositions(
-      int minPosition, int maxPosition, int axis) {
+  void _update1DRoadPositions(int minPosition, int maxPosition, int axis) {
     Set<int> increasePushingPositions;
     Set<int> decreasePushingPositions;
     if (axis == 0) {
@@ -161,44 +165,40 @@ class ObstacleAdder {
       increasePushingPositions = _upPushingRoadYPositions;
       decreasePushingPositions = _downPushingRoadYPositions;
     }
-    int decreaseUpperLimit = (decreasePushingPositions.isNotEmpty)
-        ? decreasePushingPositions.reduce(max)
-        : _origin.toList()[axis];
-    int increaseLowerLimit = (increasePushingPositions.isNotEmpty)
-        ? increasePushingPositions.reduce(min)
-        : _origin.toList()[axis];
-    var random = Random();
-    var lastPosition = minPosition;
-    var maxPositionOfRoad = maxPosition;
 
+    int decreaseUpperLimit = (decreasePushingPositions.isNotEmpty)
+        ? decreasePushingPositions.reduce(max) - _minDistanceBetweenRoads
+        : _origin.toList()[axis];
+
+    var random = Random();
+    var lastPosition = decreaseUpperLimit;
     var interval =
         random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) +
             _minDistanceBetweenRoads;
-    lastPosition += interval;
-    //lmao get fucked
-    while (lastPosition < decreaseUpperLimit) {
+    lastPosition -= interval;
+
+    while (lastPosition >= minPosition) {
       decreasePushingPositions.add(lastPosition);
-      interval =
+      lastPosition -=
           random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) +
               _minDistanceBetweenRoads;
-      lastPosition += interval;
     }
-
     if (increasePushingPositions.isNotEmpty) {
-      interval =
-          random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) +
-              _minDistanceBetweenRoads;
-      lastPosition = increaseLowerLimit + interval;
+      lastPosition = increasePushingPositions.reduce(min);
+    } else if (decreasePushingPositions.isNotEmpty) {
+      lastPosition = decreasePushingPositions.reduce(max);
+    } else {
+      lastPosition = minPosition;
     }
-
-    while (lastPosition < maxPositionOfRoad) {
+    lastPosition +=
+        random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) +
+            _minDistanceBetweenRoads;
+    while (lastPosition < maxPosition) {
       increasePushingPositions.add(lastPosition);
-      interval =
+      lastPosition +=
           random.nextInt(_maxDistanceBetweenRoads - _minDistanceBetweenRoads) +
               _minDistanceBetweenRoads;
-      lastPosition += interval;
     }
-    return [decreasePushingPositions, increasePushingPositions];
   }
 
   ///returns in order
@@ -215,10 +215,17 @@ class ObstacleAdder {
     int xMaxWithObstacles = currentLimits[0][1];
     int yMinWithObstacles = currentLimits[1][0];
     int yMaxWithObstacles = currentLimits[1][1];
-    List<Iterable<int>> verticalRoadPositions =
-        _generate1DRoadPositions(xMinWithObstacles, xMaxWithObstacles, 0);
-    List<Iterable<int>> horizontalRoadPositions =
-        _generate1DRoadPositions(yMinWithObstacles, yMaxWithObstacles, 1);
+    _update1DRoadPositions(xMinWithObstacles, xMaxWithObstacles, 0);
+    _update1DRoadPositions(yMinWithObstacles, yMaxWithObstacles, 1);
+    List<Iterable<int>> verticalRoadPositions = [
+      _leftPushingRoadXPositions,
+      _rightPushingRoadXPositions
+    ];
+
+    List<Iterable<int>> horizontalRoadPositions = [
+      _downPushingRoadYPositions,
+      _upPushingRoadYPositions
+    ];
 
     for (int index = 0; index < 2; index++) {
       for (int x in verticalRoadPositions[index]) {

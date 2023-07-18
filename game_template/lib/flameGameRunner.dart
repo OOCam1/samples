@@ -13,14 +13,16 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 }
 
 void main() {
-  int numArtists = 5;
-  HashMap<ArtistGlobalInfo, double> artists = HashMap();
-  HashSet<BuildingInfo> buildingInfos = HashSet();
+  int numArtists = 20;
+  var game = CityScreen();
+  double count = 1;
   for (int j = 0; j < 4; j++) {
+    HashSet<BuildingInfo> buildingInfos = HashSet();
+    HashMap<ArtistGlobalInfo, double> artists = HashMap();
     for (int i = 0; i < numArtists; i++) {
       artists[generateTestArtistGlobalInfo(i % 10)] = 0;
     }
-    double count = 1;
+
     for (ArtistGlobalInfo artistGlobalInfo in artists.keys) {
       artists[artistGlobalInfo] = count;
       count += 0.1;
@@ -30,9 +32,8 @@ void main() {
     for (var element in artists.entries) {
       buildingInfos.add(BuildingInfo(element.value, element.key));
     }
+    game.addBuildings(buildingInfos);
   }
-  print(buildingInfos.length);
-  var game = CityScreen(buildingInfos);
 
   runApp(GameWidget(game: game));
 }
