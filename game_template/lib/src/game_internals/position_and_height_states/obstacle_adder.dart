@@ -33,12 +33,7 @@ class ObstacleAdder {
 
   final Pixel _origin;
 
-  ObstacleAdder(Map<Pixel, Building> purePositionMap, this._origin) {
-    _obstacleAdjustedBuildingMap.addAll(purePositionMap);
-    for (var mapEntry in purePositionMap.entries) {
-      _obstacleAdjustedPositionMap[mapEntry.key] = mapEntry.value.toGridItem();
-    }
-  }
+  ObstacleAdder(this._origin);
 
   void clear() {
     _obstacleAdjustedBuildingMap.clear();
@@ -46,27 +41,34 @@ class ObstacleAdder {
   }
 
   Map<Pixel, Building> getObstacleAdjustedBuildingPositions() {
-    if (!setupDone) {
-      _setup();
-    }
     return _obstacleAdjustedBuildingMap;
   }
 
   Map<Pixel, GridItem> getObstacleAdjustedGridItemPositions() {
-    if (!setupDone) {
-      _setup();
-    }
     return _obstacleAdjustedPositionMap;
   }
 
-  void _setup() {
-    setupDone = true;
+  void setup(Map<Pixel, Building> purePositionMap) {
+    _obstacleAdjustedBuildingMap.addAll(purePositionMap);
+    for (var mapEntry in purePositionMap.entries) {
+      _obstacleAdjustedPositionMap[mapEntry.key] = mapEntry.value.toGridItem();
+    }
     if (_roadsEnabled) {
       _addRoads();
     }
-    _cutObstacleSquaresToWithinBorder();
-    if (_boundariesEnabled) {
-      _addBoundaries();
+    // _cutObstacleSquaresToWithinBorder();
+    // if (_boundariesEnabled) {
+    //   _addBoundaries();
+    // }
+
+    assert(purePositionMap.length == _obstacleAdjustedBuildingMap.length);
+    for (Pixel p in _obstacleAdjustedBuildingMap.keys) {
+      assert(_obstacleAdjustedPositionMap[p]!.isBuilding());
+    }
+    for (var mapEntry in _obstacleAdjustedPositionMap.entries) {
+      if (mapEntry.value.isBuilding()) {
+        assert(_obstacleAdjustedBuildingMap.containsKey(mapEntry.key));
+      }
     }
   }
 
@@ -435,6 +437,9 @@ class ObstacleAdder {
             _leftPushingObstaclePositions
                 .union(_rightPushingObstaclePositions));
 
+    print(currentToHorizontallyAdjusted);
+    print('next');
+
     HashMap<Pixel, Pixel> horizontallyAdjustedToFullyAdjusted =
         adjustPositionsAlongOneAxis(
             currentToHorizontallyAdjusted.values.toSet(),
@@ -442,7 +447,7 @@ class ObstacleAdder {
             newDownPushingObstacles,
             newUpPushingObstacles,
             totalObstaclePositions);
-
+    print(horizontallyAdjustedToFullyAdjusted);
     HashMap<Pixel, Pixel> oldBuildingPixelToNew = HashMap();
     for (MapEntry<Pixel, Pixel> mapEntry
         in currentToHorizontallyAdjusted.entries) {
@@ -483,7 +488,7 @@ class ObstacleAdder {
     var increment = (offset >= 0) ? 1 : -1;
     var currentPixel = oldPixel;
     var count = 0;
-    while (count < offset.abs() && obstaclePositions.contains(currentPixel)) {
+    while (count < offset.abs() || obstaclePositions.contains(currentPixel)) {
       var newPixelList = currentPixel.toList();
       newPixelList[coords] += increment;
       currentPixel = Pixel.fromList(newPixelList);

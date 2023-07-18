@@ -34,7 +34,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   //map of artist to corresponding building
   final HashMap<ArtistGlobalInfo, Building> _artistGlobalInfoToBuildingMap =
       HashMap();
-  late final ObstacleAdder obstacleAdder;
+  late final ObstacleAdder _obstacleAdder;
 
   final HashMap<Genre, PositionGenre> _genreToPositionGenre = HashMap();
 
@@ -51,6 +51,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   @override
   void clear() {
     _purePositionMap.clear();
+    _obstacleAdder.clear();
     _artistGlobalInfoToBuildingMap.clear();
     _genreToPositionGenre.clear();
     var newSet = HashSet<Pixel>();
@@ -61,6 +62,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
 
   GenreGroupedPositionState._internal() {
     var newSet = HashSet<Pixel>()..add(_origin);
+    _obstacleAdder = ObstacleAdder(_origin);
     _adjacentEmpties[0] = newSet;
     _xPureBuildingMin = _origin.x;
     _xMax = _origin.x;
@@ -85,7 +87,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   Set<PositionedBuildingInfo> getPositionsAndHeightsOfBuildings() {
     HashSet<PositionedBuildingInfo> output = HashSet();
     var obstacleAdjustedBuildingMap =
-        obstacleAdder.getObstacleAdjustedBuildingPositions();
+        _obstacleAdder.getObstacleAdjustedBuildingPositions();
     for (MapEntry<Pixel, Building> mapEntry
         in obstacleAdjustedBuildingMap.entries) {
       output.add(mapEntry.value
@@ -98,18 +100,12 @@ class GenreGroupedPositionState implements PositionStateInterface {
   Map<List<int>, GridItem> getPositionsOfItems() {
     HashMap<List<int>, GridItem> output = HashMap();
     Map<Pixel, GridItem> obstacleAdjustedPositionMap =
-        obstacleAdder.getObstacleAdjustedGridItemPositions();
+        _obstacleAdder.getObstacleAdjustedGridItemPositions();
     for (MapEntry<Pixel, GridItem> mapEntry
         in obstacleAdjustedPositionMap.entries) {
       output[mapEntry.key.toList()] = mapEntry.value;
     }
     return output;
-  }
-
-  //place roads
-  @override
-  void setupBuildingsAndObstacles({bool roads = false, bool border = false}) {
-    obstacleAdder = ObstacleAdder(_purePositionMap, _origin);
   }
 
   @override
@@ -145,6 +141,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
     for (MapEntry<PositionGenre, HashSet<Building>> mapEntry in genreList) {
       mapEntry.key.organiseByHeight(mapEntry.value);
     }
+    _obstacleAdder.setup(_purePositionMap);
   }
 
   @override

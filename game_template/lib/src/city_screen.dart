@@ -153,18 +153,10 @@ class CityScreen extends FlameGame {
   void _setUpAssets() {
     positionStateInterface.placeBuildings(_buildingInfos);
 
-    positionStateInterface.setupBuildingsAndObstacles(
-        roads: true, border: true);
     _buildingPositionsAfterObstacles =
         positionStateInterface.getPositionsAndHeightsOfBuildings();
     Map<List<int>, GridItem> gridItemPositions =
         positionStateInterface.getPositionsOfItems();
-
-    for (MapEntry<List<int>, GridItem> mapEntry in gridItemPositions.entries) {
-      if (mapEntry.value == GridItem.building) {
-        print(mapEntry.key);
-      }
-    }
 
     //Set<List<int>> visibleObstaclePositions = _cutDownObstaclePositionsToVisibleOnes();
     //fix

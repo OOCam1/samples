@@ -49,4 +49,9 @@ class Pixel {
     output.add(Pixel(x, y - 1));
     return output;
   }
+
+  @override
+  String toString() {
+    return '($x,$y)';
+  }
 }
