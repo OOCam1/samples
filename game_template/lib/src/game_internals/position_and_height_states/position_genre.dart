@@ -1,11 +1,9 @@
-
-
 import 'dart:collection';
 import 'dart:math';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'building.dart';
-class PositionGenre {
 
+class PositionGenre {
   final HashSet<Pixel> _occupied = HashSet();
   final HashSet<Pixel> _adjacentEmpties = HashSet();
   final HashMap<Pixel, PositionGenre> _adjacentOccupied = HashMap();
@@ -24,50 +22,52 @@ class PositionGenre {
     _yMax = origin.y;
   }
 
-
-
   Pixel findPosition(HashSet<PositionGenre> previousGenres) {
     int minDistance = -1;
     late Pixel selected;
     bool found = false;
     for (Pixel pixel in _adjacentEmpties) {
       var squareDistance = _getDistanceSquare(pixel);
-      if (minDistance == -1 || squareDistance <minDistance )  {
+      if (minDistance == -1 || squareDistance < minDistance) {
         selected = pixel;
         minDistance = _getDistanceSquare(pixel);
         found = true;
       }
     }
-    if (found) {return selected;}
+    if (found) {
+      return selected;
+    }
 
-    for (MapEntry<Pixel, PositionGenre> pixelMapEntry in _adjacentOccupied.entries) {
+    for (MapEntry<Pixel, PositionGenre> pixelMapEntry
+        in _adjacentOccupied.entries) {
       var squareDistance = _getDistanceSquare(pixelMapEntry.key);
-      if (!previousGenres.contains(pixelMapEntry.value) && (minDistance == -1 || squareDistance <minDistance )) {
+      if (!previousGenres.contains(pixelMapEntry.value) &&
+          (minDistance == -1 || squareDistance < minDistance)) {
         minDistance = squareDistance;
         selected = pixelMapEntry.key;
         found = true;
       }
-
     }
-    if (found) {return selected;}
+    if (found) {
+      return selected;
+    }
     throw Exception("Adjacent location not found");
   }
 
   void _setOrigin() {
-    int xLocation = (_xMax + _xMin)~/2;
-    int yLocation = (_yMax + _yMin)~/2;
+    int xLocation = (_xMax + _xMin) ~/ 2;
+    int yLocation = (_yMax + _yMin) ~/ 2;
     _origin = Pixel(xLocation, yLocation);
   }
 
-
   int _getDistanceSquare(Pixel p) {
-    return (pow(p.x-_origin.x, 2) + pow(p.y-_origin.y, 2)) as int;
+    _setOrigin();
+    return (pow(p.x - _origin.x, 2) + pow(p.y - _origin.y, 2)) as int;
   }
 
   void handleAdjacentSquareGettingOccupied(Pixel p, PositionGenre pg) {
     if (pg != this) {
       _adjacentOccupied[p] = pg;
-
     }
     _removeAdjacentEmpties(p);
   }
@@ -82,7 +82,10 @@ class PositionGenre {
     }
 
     //update extreme pixels
-    if (_xMax == pixel.x || _xMin == pixel.x || _yMax == pixel.y || _yMin == pixel.y) {
+    if (_xMax == pixel.x ||
+        _xMin == pixel.x ||
+        _yMax == pixel.y ||
+        _yMin == pixel.y) {
       HashSet<int> xLocations = HashSet();
       HashSet<int> yLocations = HashSet();
       for (Pixel p in _occupied) {
@@ -113,7 +116,7 @@ class PositionGenre {
 
   void organiseByHeight(Set<Building> buildings) {
     var buildingList = buildings.toList();
-    buildingList.sort((a,b) => -a.height.compareTo(b.height));
+    buildingList.sort((a, b) => a.height.compareTo(b.height));
     SplayTreeMap<int, Set<Pixel>> availablePositions = SplayTreeMap();
     for (Pixel pixel in _occupied) {
       var distanceSquare = _getDistanceSquare(pixel);
@@ -123,8 +126,8 @@ class PositionGenre {
       availablePositions[distanceSquare]!.add(pixel);
     }
 
-    for (Building building in buildingList) {
-      for (Set<Pixel> pixelSet in availablePositions.values ) {
+    for (Building building in buildingList.reversed) {
+      for (Set<Pixel> pixelSet in availablePositions.values) {
         if (pixelSet.isNotEmpty) {
           var newPosition = pixelSet.toList()[0];
           pixelSet.remove(newPosition);
@@ -135,14 +138,12 @@ class PositionGenre {
     }
   }
 
-
   void addToAdjacentEmpties(Pixel p) {
-
     _adjacentEmpties.add(p);
   }
 
   bool _doesSquareHaveAdjacentOwnedBuilding(Pixel pixel) {
-    for (Pixel adjacentPixel in pixel.getAdjacents())  {
+    for (Pixel adjacentPixel in pixel.getAdjacents()) {
       if (_occupied.contains(adjacentPixel)) {
         return true;
       }

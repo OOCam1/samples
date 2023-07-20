@@ -1,10 +1,15 @@
 import 'dart:collection';
+
 import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:game_template/src/components/building_asset.dart';
+import 'package:game_template/src/components/rectangle_window_maker.dart';
+import 'package:game_template/src/components/window_maker_interface.dart';
 import 'package:game_template/src/game_internals/models/artist_global_info.dart';
+
+import 'window.dart';
 
 class CuboidBuildingAsset extends BuildingAsset {
   static final HashMap<ArtistGlobalInfo, CuboidBuildingAsset>
@@ -20,13 +25,16 @@ class CuboidBuildingAsset extends BuildingAsset {
   late final PolygonComponent _leftOutline;
   late final PolygonComponent _rightOutline;
   late final PolygonComponent _topOutline;
-  static const Color _outlineColor = Colors.white;
+  static const Color _outlineColor = Colors.black;
   late double _cuboidHeight;
   late final ArtistGlobalInfo _artistGlobalInfo;
   static const double _rightDarkerThanLeftPercentage = 0.6;
   late double _horizontalDifferenceFromCenterToSideCorner;
   late double _heightDifferenceFromCenterToSideCorner;
   late Color _leftColor;
+  late Set<Window> _windows;
+
+  late WindowMaker _windowMaker;
 
   @override
   ArtistGlobalInfo get artistGlobalInfo => _artistGlobalInfo;
@@ -41,35 +49,13 @@ class CuboidBuildingAsset extends BuildingAsset {
     add(_leftSide);
     add(_rightSide);
     add(_top);
-    // add(_leftOutline);
-    // add(_rightOutline);
-    // add(_topOutline);
+    add(_leftOutline);
+    add(_rightOutline);
+    add(_topOutline);
+    await addAll(_windows);
   }
 
-  factory CuboidBuildingAsset(
-      Vector2 position,
-      double height,
-      ArtistGlobalInfo artistGlobalInfo,
-      double horizontalDifferenceFromCenterToSideCorner,
-      double heightDifferenceFromCenterToSideCorner,
-      Color color,
-      int priority) {
-    // if (_artistInfoToCuboidAsset.containsKey(artistGlobalInfo)) {
-    //   return _artistInfoToCuboidAsset[artistGlobalInfo]!;
-    // }
-    var newBuilding = CuboidBuildingAsset._internal(
-        position,
-        height,
-        artistGlobalInfo,
-        horizontalDifferenceFromCenterToSideCorner,
-        heightDifferenceFromCenterToSideCorner,
-        color,
-        priority);
-    _artistInfoToCuboidAsset[artistGlobalInfo] = newBuilding;
-    return newBuilding;
-  }
-
-  CuboidBuildingAsset._internal(
+  CuboidBuildingAsset(
       Vector2 position,
       this._cuboidHeight,
       this._artistGlobalInfo,
@@ -124,11 +110,19 @@ class CuboidBuildingAsset extends BuildingAsset {
     var outlinePaint =
         _getPaintFromColor(_outlineColor, style: PaintingStyle.stroke);
     _leftOutline =
-        PolygonComponent(leftVertices, paint: outlinePaint, priority: -1);
+        PolygonComponent(leftVertices, paint: outlinePaint, priority: 1);
     _rightOutline =
-        PolygonComponent(rightVertices, paint: outlinePaint, priority: -1);
+        PolygonComponent(rightVertices, paint: outlinePaint, priority: 1);
     _topOutline =
-        PolygonComponent(topVertices, paint: outlinePaint, priority: -1);
+        PolygonComponent(topVertices, paint: outlinePaint, priority: 1);
+    // _windowMaker = (_cuboidHeight > 100)
+    //     ? RectangleWindowMaker.twoSquareBlueWindowsPerRow()
+    //     : RectangleWindowMaker.threeTallBlackWindowsPerRow();
+    _windowMaker = RectangleWindowMaker.twoSquareBlueWindowsPerRow();
+    _windows = _windowMaker.getWindows(_cuboidHeight, width / 2);
+    for (var element in _windows) {
+      element.priority = 2;
+    }
   }
 
   Paint _getPaintFromColor(Color color,

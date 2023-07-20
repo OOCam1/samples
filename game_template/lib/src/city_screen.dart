@@ -9,10 +9,12 @@ import 'package:game_template/src/components/boundary_square.dart';
 
 import 'package:game_template/src/components/cuboid_building_asset.dart';
 
-import 'package:game_template/src/components/uniform_road_square.dart';
+import 'package:game_template/src/components/roads/uniform_road_square.dart';
+import 'package:game_template/src/components/window_maker_interface.dart';
 import 'package:game_template/src/game_internals/models/positioned_building_info.dart';
 
 import 'components/building_base_square.dart';
+import 'components/roads/block_road_square.dart';
 import 'game_internals/models/artist_global_info.dart';
 import 'game_internals/models/genre.dart';
 import 'game_internals/models/unpositioned_building_info.dart';
@@ -29,9 +31,12 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 /*TODO:
 1. (Refactor positioning on screen code into new class)
 buildings go off screen if angle low
-3. increase definition on edges of cuboids
-4. improve roads/river
+2. genres are still not organised by height for real bro
+4. add river
 3. zooooooom
+5. extremely shaky logic in genre_grouped_position_state: _purePositionMap should not exist, now that position
+is stored in building
+6. check that largest genres are placed in centre
 13. (sort out verticalGridSize - should not have to do horizontal*ratio all the time)
 */
 
@@ -45,7 +50,7 @@ class CityScreen extends FlameGame {
   late final double _viewedHeightToActualHeightRatio;
   static const double _cameraRadiansFromHorizontal = 50 * pi / 180;
   late double _gridSquareVerticalToHorizontalRatio;
-  static const double _buildingSideToGridSquareSideRatio = 0.4;
+  static const double _buildingSideToGridSquareSideRatio = 0.5;
 
   late double _xMaxPixel;
   late double _yMaxPixel;
@@ -71,6 +76,7 @@ class CityScreen extends FlameGame {
   CityScreen._internal() {
     _gridSquareVerticalToHorizontalRatio = sin(_cameraRadiansFromHorizontal);
     _viewedHeightToActualHeightRatio = cos(_cameraRadiansFromHorizontal);
+    WindowMaker.setAngleOfView(_cameraRadiansFromHorizontal);
   }
 
   void display(Map<List<int>, GridItem> positions) {
@@ -100,11 +106,15 @@ class CityScreen extends FlameGame {
           String gd;
           switch (value) {
             case GridItem.building:
-              gd = 'b ';
-            case GridItem.road:
-              gd = 'r ';
+              gd = 'b';
             case GridItem.boundary:
               gd = 'g';
+            case GridItem.horizontalRoad:
+              gd = 'h';
+            case GridItem.verticalRoad:
+              gd = 'v';
+            case GridItem.intersectionRoad:
+              gd = 'i';
           }
           str += "|" + gd + " |";
         } else {
@@ -226,19 +236,37 @@ class CityScreen extends FlameGame {
               position,
               priority);
           _componentsToRender.add(component);
-        case GridItem.road:
-          var component = UniformRoadSquare(
-              _gridSquareHorizontalSize,
-              _gridSquareHorizontalSize * _gridSquareVerticalToHorizontalRatio,
-              position,
-              priority);
-          _componentsToRender.add(component);
+
         case GridItem.boundary:
           var component = BoundarySquare(
               _gridSquareHorizontalSize,
               _gridSquareHorizontalSize * _gridSquareVerticalToHorizontalRatio,
               position,
               priority);
+          _componentsToRender.add(component);
+        case GridItem.horizontalRoad:
+          var component = BlockRoadSquare(
+              _gridSquareHorizontalSize,
+              _gridSquareHorizontalSize * _gridSquareVerticalToHorizontalRatio,
+              position,
+              GridItem.horizontalRoad,
+              priority: priority);
+          _componentsToRender.add(component);
+        case GridItem.verticalRoad:
+          var component = BlockRoadSquare(
+              _gridSquareHorizontalSize,
+              _gridSquareHorizontalSize * _gridSquareVerticalToHorizontalRatio,
+              position,
+              GridItem.verticalRoad,
+              priority: priority);
+          _componentsToRender.add(component);
+        case GridItem.intersectionRoad:
+          var component = BlockRoadSquare(
+              _gridSquareHorizontalSize,
+              _gridSquareHorizontalSize * _gridSquareVerticalToHorizontalRatio,
+              position,
+              GridItem.intersectionRoad,
+              priority: priority);
           _componentsToRender.add(component);
       }
     }

@@ -119,28 +119,36 @@ class GenreGroupedPositionState implements PositionStateInterface {
       }
       districtBuildings[primaryGenre]!.add(buildingInfo);
     }
+    var districtBuildingEntryList = districtBuildings.entries.toList();
+    districtBuildingEntryList
+        .sort((a, b) => -a.value.length.compareTo(b.value.length));
     for (MapEntry<Genre, Set<BuildingInfo>> mapEntry
-        in districtBuildings.entries) {
+        in districtBuildingEntryList) {
       for (BuildingInfo buildingInfo in mapEntry.value) {
         placeNewBuilding(buildingInfo);
       }
     }
 
-    HashMap<PositionGenre, HashSet<Building>> genreToBuildings = HashMap();
-    for (MapEntry<ArtistGlobalInfo, Building> mapEntry
-        in _artistGlobalInfoToBuildingMap.entries) {
-      var positionGenre = _genreToPositionGenre[mapEntry.key.primaryGenre]!;
-      if (!genreToBuildings.containsKey(positionGenre)) {
-        genreToBuildings[positionGenre] = HashSet();
-      }
-      genreToBuildings[positionGenre]!.add(mapEntry.value);
-    }
-    var genreList = genreToBuildings.entries.toList();
-    genreList.sort((a, b) => (-a.value.length.compareTo(b.value.length)));
+    // HashMap<PositionGenre, HashSet<Building>> genreToBuildings = HashMap();
+    // for (MapEntry<ArtistGlobalInfo, Building> mapEntry
+    //     in _artistGlobalInfoToBuildingMap.entries) {
+    //   var positionGenre = _genreToPositionGenre[mapEntry.key.primaryGenre]!;
+    //   if (!genreToBuildings.containsKey(positionGenre)) {
+    //     genreToBuildings[positionGenre] = HashSet();
+    //   }
+    //   genreToBuildings[positionGenre]!.add(mapEntry.value);
+    // }
 
-    for (MapEntry<PositionGenre, HashSet<Building>> mapEntry in genreList) {
-      mapEntry.key.organiseByHeight(mapEntry.value);
-    }
+    // for (MapEntry<PositionGenre, HashSet<Building>> mapEntry
+    //     in genreToBuildings.entries) {
+    //   mapEntry.key.organiseByHeight(mapEntry.value);
+    // }
+    // HashMap<Pixel, Building> newPositionMap = HashMap();
+    // for (Building building in _purePositionMap.values) {
+    //   newPositionMap[building.position] = building;
+    // }
+    // _purePositionMap.clear();
+    // _purePositionMap.addAll(newPositionMap);
     _obstacleAdder.setup(_purePositionMap);
   }
 

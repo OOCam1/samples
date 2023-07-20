@@ -1,7 +1,6 @@
 import 'dart:collection';
 import 'dart:math';
 
-import '../models/artist_global_info.dart';
 import 'building.dart';
 import 'grid_item.dart';
 import 'pixel.dart';
@@ -14,7 +13,7 @@ import 'pixel.dart';
 class ObstacleAdder {
   static const int _minDistanceBetweenRoads = 3;
   static const int _maxDistanceBetweenRoads = 5;
-  static const int _borderSize = 1;
+  static const int _borderSize = 2;
   static const _roadsEnabled = true;
   static const _boundariesEnabled = true;
 
@@ -80,11 +79,17 @@ class ObstacleAdder {
   void _addBoundaries() {
     for (Pixel pixel in _obstacleAdjustedBuildingMap.keys) {
       for (int x = pixel.x - _borderSize; x <= pixel.x + _borderSize; x++) {
-        for (int y = pixel.y - _borderSize; y <= pixel.y + _borderSize; y++) {
-          var newPosition = Pixel(x, y);
-          if (!_obstacleAdjustedPositionMap.containsKey(newPosition)) {
-            _obstacleAdjustedPositionMap[newPosition] = GridItem.boundary;
-          }
+        var y = pixel.y;
+        var newPosition = Pixel(x, y);
+        if (!_obstacleAdjustedPositionMap.containsKey(newPosition)) {
+          _obstacleAdjustedPositionMap[newPosition] = GridItem.boundary;
+        }
+      }
+      for (int y = pixel.y - _borderSize; y <= pixel.y + _borderSize; y++) {
+        var x = pixel.x;
+        var newPosition = Pixel(x, y);
+        if (!_obstacleAdjustedPositionMap.containsKey(newPosition)) {
+          _obstacleAdjustedPositionMap[newPosition] = GridItem.boundary;
         }
       }
     }
@@ -94,10 +99,17 @@ class ObstacleAdder {
     List<List<Set<Pixel>>> roadSquares = _generateRoadSquares();
     _addObstaclesToSystem(roadSquares[0][0], roadSquares[0][1],
         roadSquares[1][0], roadSquares[1][1]);
-    for (var setList in roadSquares) {
-      for (Set<Pixel> pixelSet in setList) {
-        for (Pixel pixel in pixelSet) {
-          _obstacleAdjustedPositionMap[pixel] = GridItem.road;
+    for (var pixelSet in roadSquares[0]) {
+      for (Pixel pixel in pixelSet) {
+        _obstacleAdjustedPositionMap[pixel] = GridItem.horizontalRoad;
+      }
+    }
+    for (var pixelSet in roadSquares[1]) {
+      for (Pixel pixel in pixelSet) {
+        if (_obstacleAdjustedPositionMap.containsKey(pixel)) {
+          _obstacleAdjustedPositionMap[pixel] = GridItem.intersectionRoad;
+        } else {
+          _obstacleAdjustedPositionMap[pixel] = GridItem.verticalRoad;
         }
       }
     }
@@ -184,7 +196,7 @@ class ObstacleAdder {
               _minDistanceBetweenRoads;
     }
     if (increasePushingPositions.isNotEmpty) {
-      lastPosition = increasePushingPositions.reduce(min);
+      lastPosition = increasePushingPositions.reduce(max);
     } else if (decreasePushingPositions.isNotEmpty) {
       lastPosition = decreasePushingPositions.reduce(max);
     } else {
@@ -229,11 +241,12 @@ class ObstacleAdder {
 
     for (int index = 0; index < 2; index++) {
       for (int x in verticalRoadPositions[index]) {
-        for (int y = yMinWithObstacles - _borderSize;
+        for (int y = yMinWithObstacles - _borderSize - 1;
             y <=
                 yMaxWithObstacles +
                     horizontalRoadPositions.length +
-                    _borderSize;
+                    _borderSize +
+                    1;
             y++) {
           leftAndRightPushingRoadSquares[index].add(Pixel(x, y));
         }
@@ -241,8 +254,12 @@ class ObstacleAdder {
     }
     for (int index = 0; index < 2; index++) {
       for (int y in horizontalRoadPositions[index]) {
-        for (int x = xMinWithObstacles - _borderSize;
-            x <= xMaxWithObstacles + verticalRoadPositions.length + _borderSize;
+        for (int x = xMinWithObstacles - _borderSize - 1;
+            x <=
+                xMaxWithObstacles +
+                    verticalRoadPositions.length +
+                    _borderSize +
+                    1;
             x++) {
           upAndDownPushingRoadSquares[index].add(Pixel(x, y));
         }
