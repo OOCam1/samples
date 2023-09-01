@@ -6,6 +6,8 @@ import 'package:game_template/src/game_internals/models/genre.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/obstacle_adder.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/position_state_interface.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/positioned_building_info.dart';
 import '../models/unpositioned_building_info.dart';
 import 'building.dart';
@@ -25,6 +27,8 @@ class GenreGroupedPositionState implements PositionStateInterface {
   static final GenreGroupedPositionState _instance =
       GenreGroupedPositionState._internal();
 
+
+
   factory GenreGroupedPositionState() {
     return _instance;
   }
@@ -42,6 +46,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   final SplayTreeMap<int, Set<Pixel>> _adjacentEmpties = SplayTreeMap();
   //Central square
   final Pixel _origin = Pixel(0, 0);
+
 
   late int _xPureBuildingMin;
   late int _xMax;
@@ -69,19 +74,19 @@ class GenreGroupedPositionState implements PositionStateInterface {
     _yMin = _origin.y;
     _yMax = _origin.y;
   }
-
-  @override
-  void changeHeight(ArtistGlobalInfo artistGlobalInfo, double height) {
-    if (!_artistGlobalInfoToBuildingMap.containsKey(artistGlobalInfo)) {
-      throw Exception("Artist info not in position state");
-    }
-    Building building = _artistGlobalInfoToBuildingMap[artistGlobalInfo]!;
-    if (height < building.height) {
-      throw Exception("New height of building smaller than old height");
-    }
-    _artistGlobalInfoToBuildingMap[artistGlobalInfo]!.buildingInfo.height =
-        height;
-  }
+  //
+  // @override
+  // void changeHeight(ArtistGlobalInfo artistGlobalInfo, double score) {
+  //   if (!_artistGlobalInfoToBuildingMap.containsKey(artistGlobalInfo)) {
+  //     throw Exception("Artist info not in position state");
+  //   }
+  //   Building building = _artistGlobalInfoToBuildingMap[artistGlobalInfo]!;
+  //   if (score < building.score) {
+  //     throw Exception("New height of building smaller than old height");
+  //   }
+  //   _artistGlobalInfoToBuildingMap[artistGlobalInfo]!.buildingInfo.score =
+  //       score;
+  // }
 
   @override
   Set<PositionedBuildingInfo> getPositionsAndHeightsOfBuildings() {
@@ -110,6 +115,8 @@ class GenreGroupedPositionState implements PositionStateInterface {
 
   @override
   void placeBuildings(Set<BuildingInfo> buildings) {
+    buildings.removeWhere((element) =>
+    _artistGlobalInfoToBuildingMap.containsKey(element.artistGlobalInfo));
     HashMap<Genre, Set<BuildingInfo>> districtBuildings = HashMap();
     for (BuildingInfo buildingInfo in buildings) {
       var artistGlobalInfo = buildingInfo.artistGlobalInfo;
@@ -125,7 +132,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
     for (MapEntry<Genre, Set<BuildingInfo>> mapEntry
         in districtBuildingEntryList) {
       for (BuildingInfo buildingInfo in mapEntry.value) {
-        placeNewBuilding(buildingInfo);
+        _placeNewBuilding(buildingInfo);
       }
     }
 
@@ -152,8 +159,13 @@ class GenreGroupedPositionState implements PositionStateInterface {
     _obstacleAdder.setup(_purePositionMap);
   }
 
-  @override
-  void placeNewBuilding(BuildingInfo buildingInfo) {
+  void _save() async {
+    final dir = await getApplicationDocumentsDirectory();
+
+  }
+
+
+  void _placeNewBuilding(BuildingInfo buildingInfo) {
     if (_artistGlobalInfoToBuildingMap
         .containsKey(buildingInfo.artistGlobalInfo)) {
       throw Exception("Artist already in position state");

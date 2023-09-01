@@ -5,9 +5,8 @@ import 'package:game_template/src/game_internals/position_and_height_states/grid
 import '../models/unpositioned_building_info.dart';
 
 abstract class PositionStateInterface {
-  void placeNewBuilding(BuildingInfo buildingInfo);
   void placeBuildings(Set<BuildingInfo> buildings);
-  void changeHeight(ArtistGlobalInfo artistGlobalInfo, double height);
+  // void changeHeight(ArtistGlobalInfo artistGlobalInfo, double height);
   void clear();
   Map<List<int>, GridItem> getPositionsOfItems();
   //List contains x, then y, then height

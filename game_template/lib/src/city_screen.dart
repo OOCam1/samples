@@ -31,9 +31,11 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 /*TODO:
 1. (Refactor positioning on screen code into new class)
 buildings go off screen if angle low
+2. not on screen
 2. genres are still not organised by height for real bro
 4. add river
 3. zooooooom
+10. subscriber pattern for position state being updated
 5. extremely shaky logic in genre_grouped_position_state: _purePositionMap should not exist, now that position
 is stored in building
 6. check that largest genres are placed in centre
@@ -44,8 +46,6 @@ class CityScreen extends FlameGame {
   static final CityScreen _instance = CityScreen._internal();
   final world = World();
   late final CameraComponent cameraComponent;
-  final PositionStateInterface positionStateInterface =
-      GenreGroupedPositionState();
   late double _gridSquareHorizontalSize;
   late final double _viewedHeightToActualHeightRatio;
   static const double _cameraRadiansFromHorizontal = 50 * pi / 180;
@@ -66,7 +66,6 @@ class CityScreen extends FlameGame {
   int _minPriority = 0;
   final Set<PositionComponent> _componentsToRender = HashSet();
   final Map<Genre, Color> _genreToColor = HashMap();
-  final Set<BuildingInfo> _buildingInfos = HashSet();
   Set<PositionedBuildingInfo> _buildingPositionsAfterObstacles = HashSet();
   Map<List<int>, GridItem> _gridItemPositions = HashMap();
 
@@ -146,26 +145,9 @@ class CityScreen extends FlameGame {
     print('done');
   }
 
-  void addBuildings(Iterable<BuildingInfo> newBuildingInfos) {
-    for (BuildingInfo buildingInfo in newBuildingInfos) {
-      if (buildingInfo.height <= 0) {
-        throw Exception('Height assigned to artist should be greater than 0');
-      }
-    }
-    var newBuildingInfoSet =
-        newBuildingInfos.toSet().difference(_buildingInfos);
-    _buildingInfos.addAll(newBuildingInfos);
-
-    _setBuildingPositions(newBuildingInfoSet);
-  }
-
-  void _setBuildingPositions(Set<BuildingInfo> newBuildingInfoSet) {
-    positionStateInterface.placeBuildings(newBuildingInfoSet);
-
-    _buildingPositionsAfterObstacles =
-        positionStateInterface.getPositionsAndHeightsOfBuildings();
-
-    _gridItemPositions = positionStateInterface.getPositionsOfItems();
+  void setPositions(Set<PositionedBuildingInfo> buildingInfos, Map<List<int>, GridItem> gridItems) {
+    _buildingPositionsAfterObstacles = buildingInfos;
+    _gridItemPositions = gridItems;
   }
 
   //Places buildings in grid positions, then sets each of their positions and heights, creating building components

@@ -1,25 +1,30 @@
 import 'dart:collection';
 
 import 'package:game_template/src/game_internals/models/artist_global_info.dart';
+import 'package:isar/isar.dart';
+
 
 class BuildingInfo {
+
   static final HashMap<ArtistGlobalInfo, BuildingInfo> _instances = HashMap();
 
-  late double height;
+  double score;
   late final ArtistGlobalInfo _artistGlobalInfo;
 
-  ArtistGlobalInfo get artistGlobalInfo => _artistGlobalInfo;
 
-  factory BuildingInfo(double height, ArtistGlobalInfo artistGlobalInfo) {
+  factory BuildingInfo(double score, ArtistGlobalInfo artistGlobalInfo) {
     if (_instances.containsKey(artistGlobalInfo)) {
       var instance = _instances[artistGlobalInfo]!;
-      instance.height = height;
+      instance.score = score;
       return instance;
     }
-    var newBuilding = BuildingInfo._internal(height, artistGlobalInfo);
+    var newBuilding = BuildingInfo._internal(score, artistGlobalInfo);
     _instances[artistGlobalInfo] = newBuilding;
     return newBuilding;
   }
 
-  BuildingInfo._internal(this.height, this._artistGlobalInfo);
+  ArtistGlobalInfo get artistGlobalInfo =>  _artistGlobalInfo;
+  BuildingInfo._internal(this.score, this._artistGlobalInfo);
+
+  double get height => score;
 }
