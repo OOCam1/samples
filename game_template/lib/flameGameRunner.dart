@@ -1,5 +1,6 @@
 import "dart:collection";
 
+
 import "package:flame/game.dart";
 import "package:flutter/cupertino.dart";
 import "package:game_template/src/building_handler.dart";
@@ -8,6 +9,7 @@ import "package:game_template/src/game_internals/models/artist_global_info.dart"
 import "package:game_template/src/game_internals/models/building_isar_record.dart";
 import "package:game_template/src/game_internals/models/genre.dart";
 import "package:game_template/src/game_internals/models/unpositioned_building_info.dart";
+import "package:game_template/src/game_internals/storage.dart";
 import "package:isar/isar.dart";
 import "package:path_provider/path_provider.dart";
 
@@ -20,9 +22,22 @@ void main() async {
   int artistCount = 0;
   int numArtists = 20;
   WidgetsFlutterBinding.ensureInitialized();
-  final dir = await getApplicationDocumentsDirectory();
-  final isar = await Isar.open([BuildingIsarRecordSchema],
-      directory: dir.path);
+  var id = 0;
+  var storage = Storage();
+
+  Set<BuildingInfo> buildingInfos = HashSet();
+  for (int i = 0; i <= 5; i ++) {
+    buildingInfos.add(BuildingInfo(3, generateTestArtistGlobalInfo(4, i)));
+  }
+  storage.save(buildingInfos, HashSet());
+  var newBuildingInfos = await storage.getBuildingInfos();
+  for (BuildingInfo info in newBuildingInfos) {
+    print(info.artistGlobalInfo.id);
+  }
+  // WidgetsFlutterBinding.ensureInitialized();
+  // final dir = await getApplicationDocumentsDirectory();
+  // final isar = await Isar.open([BuildingIsarRecordSchema],
+  //     directory: dir.path);
   // BuildingIsarRecord buildingIsarRecord = BuildingIsarRecord();
   // buildingIsarRecord.artistName = "gay";
   // await isar.writeTxn(()  async {

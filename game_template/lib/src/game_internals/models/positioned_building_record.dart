@@ -19,4 +19,12 @@ class PositionedBuildingRecord {
     y = buildingInfo.y;
     buildingRecord.value = BuildingIsarRecord.fromBuildingInfo(buildingInfo);
 }
+
+  PositionedBuildingInfo toBuildingInfo() {
+    if (!buildingRecord.isAttached) {
+      throw Exception("Link doesn't go to record");
+    }
+    var newInfo = buildingRecord.value!.toBuildingInfo();
+    return PositionedBuildingInfo(newInfo, x!, y!);
+  }
 }

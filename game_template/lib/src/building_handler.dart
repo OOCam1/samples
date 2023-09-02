@@ -18,6 +18,7 @@ class BuildingHandler {
 
 
   void run() {
+
     var buildingPositionsAfterObstacles = _positionStateInterface.getPositionsAndHeightsOfBuildings();
     var gridItemPositions = _positionStateInterface.getPositionsOfItems();
     _cityScreen.setPositions(buildingPositionsAfterObstacles, gridItemPositions);

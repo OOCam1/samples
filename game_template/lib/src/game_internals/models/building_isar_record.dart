@@ -17,10 +17,9 @@ class BuildingIsarRecord {
 
   static final Map<BuildingInfo, BuildingIsarRecord> _infoToRecord = HashMap();
   static final Map<BuildingIsarRecord, BuildingInfo> _recordToInfo = HashMap();
+
   Id id = Isar.autoIncrement;
-
   List<String>? genreNames;
-
   String? artistId;
   String? artistName;
 

@@ -8,8 +8,7 @@ import 'package:game_template/src/game_internals/models/positioned_building_reco
 import 'package:game_template/src/game_internals/position_and_height_states/obstacle_adder.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/position_state_interface.dart';
-import 'package:isar/isar.dart';
-import 'package:path_provider/path_provider.dart';
+
 import '../models/positioned_building_info.dart';
 import '../models/unpositioned_building_info.dart';
 import 'building.dart';
@@ -100,7 +99,6 @@ class GenreGroupedPositionState implements PositionStateInterface {
       output.add(mapEntry.value
           .toPositionedBuildingInfo(mapEntry.key.x, mapEntry.key.y));
     }
-    _save(output);
     return output;
   }
 
@@ -162,19 +160,6 @@ class GenreGroupedPositionState implements PositionStateInterface {
     _obstacleAdder.setup(_purePositionMap);
   }
 
-  void _save(Iterable<PositionedBuildingInfo> buildingInfos) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final isar = await Isar.open([PositionedBuildingRecordSchema, BuildingIsarRecordSchema],
-        directory: dir.path,
-        inspector: true);
-    Set<PositionedBuildingRecord> toWrite = HashSet();
-    for (PositionedBuildingInfo buildingInfo in buildingInfos) {
-      toWrite.add(PositionedBuildingRecord.fromPositionedBuildingInfo(buildingInfo));
-    }
-    await isar.writeTxn(() async {
-      await isar.positionedBuildingRecords.putAll(toWrite.toList());
-    });
-  }
 
 
   void _placeNewBuilding(BuildingInfo buildingInfo) {
