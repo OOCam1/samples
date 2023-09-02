@@ -23,12 +23,16 @@ void main() async {
   final dir = await getApplicationDocumentsDirectory();
   final isar = await Isar.open([BuildingIsarRecordSchema],
       directory: dir.path);
-  BuildingIsarRecord buildingIsarRecord = BuildingIsarRecord();
-  buildingIsarRecord.artistName = "gay";
-  final thing = isar.buildingIsarRecords;
-  for (BuildingIsarRecord b in thing.where().findAllSync()) {
-    assert(b.artistName == "gay");
-  }
+  // BuildingIsarRecord buildingIsarRecord = BuildingIsarRecord();
+  // buildingIsarRecord.artistName = "gay";
+  // await isar.writeTxn(()  async {
+  //   await isar.buildingIsarRecords.put(buildingIsarRecord);
+  // });
+  // final thing = isar.buildingIsarRecords;
+  // for (BuildingIsarRecord b in thing.where().findAllSync()) {
+  //   print("yes");
+  //   assert(b.artistName == "gay");
+  // }
   var game = BuildingHandler();
   double count = 1;
   for (int j = 0; j < 4; j++) {
@@ -48,7 +52,7 @@ void main() async {
     for (var element in artists.entries) {
       buildingInfos.add(BuildingInfo(element.value, element.key));
     }
-    print(artists.length);
+
     game.addBuildings(buildingInfos);
   }
 

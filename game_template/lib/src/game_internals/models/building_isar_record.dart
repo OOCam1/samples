@@ -3,6 +3,8 @@
 import 'dart:collection';
 import 'dart:ffi';
 
+import 'package:game_template/src/game_internals/models/artist_global_info.dart';
+import 'package:game_template/src/game_internals/models/positioned_building_info.dart';
 import 'package:game_template/src/game_internals/models/unpositioned_building_info.dart';
 import 'package:isar/isar.dart';
 
@@ -13,7 +15,8 @@ part 'building_isar_record.g.dart';
 @collection
 class BuildingIsarRecord {
 
-  static Map<BuildingInfo, BuildingIsarRecord> infoToRecord = HashMap();
+  static final Map<BuildingInfo, BuildingIsarRecord> _infoToRecord = HashMap();
+  static final Map<BuildingIsarRecord, BuildingInfo> _recordToInfo = HashMap();
   Id id = Isar.autoIncrement;
 
   List<String>? genreNames;
@@ -28,8 +31,8 @@ class BuildingIsarRecord {
   BuildingIsarRecord();
 
   factory BuildingIsarRecord.fromBuildingInfo(BuildingInfo buildingInfo) {
-    if (infoToRecord.containsKey(buildingInfo)) {
-      return infoToRecord[buildingInfo]!;
+    if (_infoToRecord.containsKey(buildingInfo)) {
+      return _infoToRecord[buildingInfo]!;
     }
     Set<String> genreNames = HashSet();
     for (Genre g in buildingInfo.artistGlobalInfo.genres) {
@@ -41,9 +44,25 @@ class BuildingIsarRecord {
         ..uri = buildingInfo.artistGlobalInfo.uri.toString()
         ..score = buildingInfo.score
         ..genreNames = genreNames.toList();
-    infoToRecord[buildingInfo] = newRecord;
+    _infoToRecord[buildingInfo] = newRecord;
+    _recordToInfo[newRecord] = buildingInfo;
     return newRecord;
   }
+
+  BuildingInfo toBuildingInfo() {
+    if (_recordToInfo.containsKey(this)) {
+      return _recordToInfo[this]!;
+    }
+    List<Genre> newGenres = [];
+    for (String genreName in genreNames!) {
+      newGenres.add(Genre(genreName));
+    }
+    var newArtistInfo = ArtistGlobalInfo(Uri.parse(uri!), artistName!, artistId!, newGenres);
+    var newInfo = BuildingInfo(score!, newArtistInfo);
+    _recordToInfo[this] = newInfo;
+    _infoToRecord[newInfo] = this;
+    return newInfo;
+}
 }
 
 

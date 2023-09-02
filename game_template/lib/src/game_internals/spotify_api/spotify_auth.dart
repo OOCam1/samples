@@ -37,7 +37,7 @@ class SpotifyAuth extends ChangeNotifier {
       final tokens = await SpotifyAuthApi.getAuthTokens(code, redirectUri);
       await tokens.saveToStorage();
 
-      user = await SpotifyApi.getCurrentUser(); // Uses token in storage
+      user = await SpotifyApi.getCurrentUser(); // Uses token in storage_handler.dart
       notifyListeners();
     } on Exception catch (e) {
       print(e);
@@ -50,7 +50,7 @@ class SpotifyAuth extends ChangeNotifier {
     try {
       await AuthTokens.updateTokenToLatest();
 
-      user = await SpotifyApi.getCurrentUser(); // Uses token in storage
+      user = await SpotifyApi.getCurrentUser(); // Uses token in storage_handler.dart
       notifyListeners();
     } catch (e) {
       print(e);

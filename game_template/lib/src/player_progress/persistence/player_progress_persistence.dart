@@ -4,7 +4,7 @@
 
 /// An interface of persistence stores for the player's progress.
 ///
-/// Implementations can range from simple in-memory storage through
+/// Implementations can range from simple in-memory storage_handler.dart through
 /// local preferences to cloud saves.
 abstract class PlayerProgressPersistence {
   Future<int> getHighestLevelReached();
