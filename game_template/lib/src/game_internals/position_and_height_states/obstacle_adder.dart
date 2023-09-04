@@ -1,5 +1,11 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
+
+import 'package:game_template/src/game_internals/position_and_height_states/obstacle_adder_record.dart';
+import 'package:get/get.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'building.dart';
 import 'grid_item.dart';
@@ -17,12 +23,13 @@ class ObstacleAdder {
   static const _roadsEnabled = true;
   static const _boundariesEnabled = true;
 
+  Isar isar;
   final Map<Pixel, GridItem> _obstacleAdjustedPositionMap = HashMap();
   final Map<Pixel, Building> _obstacleAdjustedBuildingMap = HashMap();
-  final HashSet<int> _leftPushingRoadXPositions = HashSet();
-  final HashSet<int> _rightPushingRoadXPositions = HashSet();
-  final HashSet<int> _upPushingRoadYPositions = HashSet();
-  final HashSet<int> _downPushingRoadYPositions = HashSet();
+  Iterable<int> _leftPushingRoadXPositions = HashSet();
+  Iterable<int> _rightPushingRoadXPositions = HashSet();
+  Iterable<int> _upPushingRoadYPositions = HashSet();
+  Iterable<int> _downPushingRoadYPositions = HashSet();
 
   final HashSet<Pixel> _leftPushingObstaclePositions = HashSet();
   final HashSet<Pixel> _rightPushingObstaclePositions = HashSet();
@@ -31,12 +38,23 @@ class ObstacleAdder {
 
   final Pixel _origin;
 
-  ObstacleAdder(this._origin);
+
+  static Future<ObstacleAdder> create(Pixel origin) async {
+    var dir = await getApplicationDocumentsDirectory();
+    var isar = await Isar.open([ObstacleAdderRecordSchema],
+        directory: dir.path,
+    name : "obstacle_adder");
+    return ObstacleAdder._internal(origin, isar);
+  }
+  ObstacleAdder._internal(this._origin, this.isar);
 
   void clear() {
     _obstacleAdjustedBuildingMap.clear();
     _obstacleAdjustedPositionMap.clear();
   }
+
+
+
 
   Map<Pixel, Building> getObstacleAdjustedBuildingPositions() {
     return _obstacleAdjustedBuildingMap;
@@ -46,7 +64,10 @@ class ObstacleAdder {
     return _obstacleAdjustedPositionMap;
   }
 
-  void setup(Map<Pixel, Building> purePositionMap) {
+
+
+  Future setup(Map<Pixel, Building> purePositionMap) async{
+    await _loadState();
     _leftPushingObstaclePositions.clear();
     _rightPushingObstaclePositions.clear();
     _upPushingObstaclePositions.clear();
@@ -74,7 +95,36 @@ class ObstacleAdder {
         assert(_obstacleAdjustedBuildingMap.containsKey(mapEntry.key));
       }
     }
+    unawaited(_saveState());
   }
+
+
+
+  Future _saveState() async{
+    var record = ObstacleAdderRecord()
+      ..leftXPositions = _leftPushingRoadXPositions.toList()
+      ..rightXPositions = _rightPushingRoadXPositions.toList()
+      ..upYPositions = _upPushingRoadYPositions.toList()
+      ..downYPositions = _downPushingRoadYPositions.toList();
+    await isar.writeTxn(() async {
+      await isar.obstacleAdderRecords.put(record);
+    });
+  }
+
+  Future _loadState() async {
+    final table = isar.obstacleAdderRecords;
+    var record = await table.where().findFirst();
+    if (record == null) {
+      return [[], [], [], []];
+    }
+    return [
+      record.downYPositions ?? [],
+      record.upYPositions ?? [],
+      record.leftXPositions ?? [],
+      record.rightXPositions ?? []
+    ];
+  }
+
 
   void _addBoundaries() {
     for (Pixel pixel in _obstacleAdjustedBuildingMap.keys) {
@@ -171,11 +221,11 @@ class ObstacleAdder {
     Set<int> increasePushingPositions;
     Set<int> decreasePushingPositions;
     if (axis == 0) {
-      increasePushingPositions = _rightPushingRoadXPositions;
-      decreasePushingPositions = _leftPushingRoadXPositions;
+      increasePushingPositions = _rightPushingRoadXPositions.toSet();
+      decreasePushingPositions = _leftPushingRoadXPositions.toSet();
     } else {
-      increasePushingPositions = _upPushingRoadYPositions;
-      decreasePushingPositions = _downPushingRoadYPositions;
+      increasePushingPositions = _upPushingRoadYPositions.toSet();
+      decreasePushingPositions = _downPushingRoadYPositions.toSet();
     }
 
     int decreaseUpperLimit = (decreasePushingPositions.isNotEmpty)
@@ -461,8 +511,7 @@ class ObstacleAdder {
             _leftPushingObstaclePositions
                 .union(_rightPushingObstaclePositions));
 
-    print(currentToHorizontallyAdjusted);
-    print('next');
+
 
     HashMap<Pixel, Pixel> horizontallyAdjustedToFullyAdjusted =
         adjustPositionsAlongOneAxis(
@@ -471,7 +520,7 @@ class ObstacleAdder {
             newDownPushingObstacles,
             newUpPushingObstacles,
             totalObstaclePositions);
-    print(horizontallyAdjustedToFullyAdjusted);
+
     HashMap<Pixel, Pixel> oldBuildingPixelToNew = HashMap();
     for (MapEntry<Pixel, Pixel> mapEntry
         in currentToHorizontallyAdjusted.entries) {

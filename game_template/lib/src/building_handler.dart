@@ -2,6 +2,7 @@
 
 import 'dart:collection';
 
+
 import 'package:flame/game.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:game_template/src/city_screen.dart';
@@ -10,18 +11,36 @@ import 'game_internals/models/positioned_building_info.dart';
 import 'game_internals/models/unpositioned_building_info.dart';
 import 'game_internals/position_and_height_states/genre_grouped_position_state.dart';
 import 'game_internals/position_and_height_states/grid_item.dart';
-import 'game_internals/position_and_height_states/position_state_interface.dart';
+import 'game_internals/position_and_height_states/position_state.dart';
+import 'game_internals/storage.dart';
 
 class BuildingHandler {
-  final PositionStateInterface _positionStateInterface = GenreGroupedPositionState();
+
+  final PositionState _positionStateInterface;
   final CityScreen _cityScreen = CityScreen();
+  final Storage _storage;
 
+  BuildingHandler._internal(this._storage, this._positionStateInterface);
 
-  void run() {
+  static Future<BuildingHandler> create() async {
+    var storage = await Storage.create();
+    var positionState = await GenreGroupedPositionState.create(await storage.getPositionedBuildingInfos());
+    return BuildingHandler._internal(storage, positionState);
+  }
+
+  Future run() async {
+    await _storage.clear();
 
     var buildingPositionsAfterObstacles = _positionStateInterface.getPositionsAndHeightsOfBuildings();
     var gridItemPositions = _positionStateInterface.getPositionsOfItems();
     _cityScreen.setPositions(buildingPositionsAfterObstacles, gridItemPositions);
+    //TODO save the unpositioned buildings too
+
+    Set<BuildingInfo> unpositionedInfos = HashSet();
+    for (PositionedBuildingInfo pos in buildingPositionsAfterObstacles) {
+      unpositionedInfos.add(pos.unpositionedBuildingInfo());
+    }
+    _storage.save(unpositionedInfos, buildingPositionsAfterObstacles);
     runApp(GameWidget(game: _cityScreen));
   }
 

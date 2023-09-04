@@ -8,6 +8,8 @@ import 'package:game_template/src/city_screen.dart';
 import "package:game_template/src/game_internals/models/artist_global_info.dart";
 import "package:game_template/src/game_internals/models/building_isar_record.dart";
 import "package:game_template/src/game_internals/models/genre.dart";
+import "package:game_template/src/game_internals/models/positioned_building_info.dart";
+import "package:game_template/src/game_internals/models/positioned_building_record.dart";
 import "package:game_template/src/game_internals/models/unpositioned_building_info.dart";
 import "package:game_template/src/game_internals/storage.dart";
 import "package:isar/isar.dart";
@@ -15,40 +17,45 @@ import "package:path_provider/path_provider.dart";
 
 ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName, int id) {
   var primaryGenre = Genre(primaryGenreName.toString());
-  return ArtistGlobalInfo(Uri.parse(''), id.toString(), id.toString(), [primaryGenre]);
+  return ArtistGlobalInfo(Uri.parse('asldfnakf '), id.toString(), id.toString(), [primaryGenre]);
 }
 
 void main() async {
-  int artistCount = 0;
-  int numArtists = 20;
+  int artistCount = 20;
+  int numArtists = 2;
   WidgetsFlutterBinding.ensureInitialized();
   var id = 0;
-  var storage = Storage();
-
-  Set<BuildingInfo> buildingInfos = HashSet();
-  for (int i = 0; i <= 5; i ++) {
-    buildingInfos.add(BuildingInfo(3, generateTestArtistGlobalInfo(4, i)));
-  }
-  storage.save(buildingInfos, HashSet());
-  var newBuildingInfos = await storage.getBuildingInfos();
-  for (BuildingInfo info in newBuildingInfos) {
-    print(info.artistGlobalInfo.id);
-  }
-  // WidgetsFlutterBinding.ensureInitialized();
-  // final dir = await getApplicationDocumentsDirectory();
-  // final isar = await Isar.open([BuildingIsarRecordSchema],
-  //     directory: dir.path);
-  // BuildingIsarRecord buildingIsarRecord = BuildingIsarRecord();
-  // buildingIsarRecord.artistName = "gay";
-  // await isar.writeTxn(()  async {
-  //   await isar.buildingIsarRecords.put(buildingIsarRecord);
-  // });
-  // final thing = isar.buildingIsarRecords;
-  // for (BuildingIsarRecord b in thing.where().findAllSync()) {
-  //   print("yes");
-  //   assert(b.artistName == "gay");
+  // var storage = await Storage.create();
+  // await storage.clear();
+  // Set<BuildingInfo> buildingInfos = HashSet();
+  // Set<PositionedBuildingInfo> posBuildingInfos = HashSet();
+  // for (int i = 0; i <= 5; i ++) {
+  //   var buildingInfo = BuildingInfo(3, generateTestArtistGlobalInfo(4, i));
+  //   buildingInfos.add(buildingInfo);
+  //   if (i %2 == 0) {
+  //     posBuildingInfos.add(PositionedBuildingInfo(buildingInfo, 0, 0));
+  //   }
   // }
-  var game = BuildingHandler();
+  // storage.save(buildingInfos, posBuildingInfos);
+  // var newBuildingInfos = await storage.getBuildingInfos();
+  // print(newBuildingInfos.length);
+  // for (BuildingInfo info in newBuildingInfos) {
+  //   print(info.artistGlobalInfo.id);
+  // }
+  //
+  // print("Pos");
+  // var newPosInfos = await storage.getPositionedBuildingInfos();
+  // for (PositionedBuildingInfo posInfo in newPosInfos) {
+  //   print(posInfo.artistGlobalInfo.id);
+  // }
+  //
+  var game = await BuildingHandler.create();
+  var dir = await getApplicationDocumentsDirectory();
+  var isar = await Isar.open([
+    PositionedBuildingRecordSchema,
+    BuildingIsarRecordSchema
+  ], directory: dir.path,
+  name : "stuff");
   double count = 1;
   for (int j = 0; j < 4; j++) {
     HashSet<BuildingInfo> buildingInfos = HashSet();

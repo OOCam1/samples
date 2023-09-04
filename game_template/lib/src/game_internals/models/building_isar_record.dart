@@ -23,7 +23,7 @@ class BuildingIsarRecord {
   String? artistId;
   String? artistName;
 
-  @ignore
+
   String? uri;
   double? score;
 

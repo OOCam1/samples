@@ -10,7 +10,7 @@ class PositionedBuildingRecord {
   Id id = Isar.autoIncrement;
   int? x;
   int? y;
-  IsarLink<BuildingIsarRecord> buildingRecord = IsarLink();
+  final buildingRecord = IsarLink<BuildingIsarRecord>();
 
   PositionedBuildingRecord();
 

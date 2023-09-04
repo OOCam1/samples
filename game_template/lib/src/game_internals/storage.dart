@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:game_template/src/game_internals/models/unpositioned_building_info.dart';
+import 'package:game_template/src/game_internals/position_and_height_states/obstacle_adder_record.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -10,14 +11,33 @@ import 'models/positioned_building_record.dart';
 
 class Storage {
   late Isar isar;
-  bool initialised = false;
+
+  Storage._internal(this.isar);
+
+  static Future<Storage> create() async {
+    var dir = await getApplicationDocumentsDirectory();
+    return Storage._internal(await Isar.open(
+        [PositionedBuildingRecordSchema, BuildingIsarRecordSchema, ObstacleAdderRecordSchema],
+        directory: dir.path,
+        inspector: true));
+  }
 
 
-
-  void save(Set<BuildingInfo> buildings, Set<PositionedBuildingInfo> posBuildings) async{
-    await _initialise();
+  void save(Set<BuildingInfo> buildings, Set<PositionedBuildingInfo> posBuildings) {
     List<PositionedBuildingRecord> posRecords = [];
     List<BuildingIsarRecord> unPosRecords = [];
+
+    //Error checking
+    final HashSet<String> unPosIDs = HashSet();
+    for (BuildingInfo info in buildings) {
+      unPosIDs.add(info.artistGlobalInfo.id);
+    }
+    for (PositionedBuildingInfo posInfo in posBuildings) {
+      if (!unPosIDs.contains(posInfo.artistGlobalInfo.id)) {
+        throw Exception("Positioned info contains reference to unpositioned info that is not being saved");
+      }
+    }
+
     final HashSet<String> artistIDs = HashSet();
     for (BuildingIsarRecord record in isar.buildingIsarRecords.where().findAllSync()) {
       if (record.artistId != null) {
@@ -32,40 +52,63 @@ class Storage {
     for (PositionedBuildingInfo info in posBuildings) {
       posRecords.add(PositionedBuildingRecord.fromPositionedBuildingInfo(info));
     }
-    await isar.writeTxn(() async {
-      await isar.buildingIsarRecords.putAll(unPosRecords.toList());
-      await isar.positionedBuildingRecords.putAll(posRecords.toList());
+    isar.writeTxnSync(() {
+      isar.buildingIsarRecords.putAllSync(unPosRecords.toList());
+      isar.positionedBuildingRecords.putAllSync(posRecords.toList());
     });
   }
 
-  Future<Set<BuildingInfo>> getBuildingInfos() async {
-    await _initialise();
+  Future<Set<BuildingInfo>> getBuildingInfos() async{
     final table = isar.buildingIsarRecords;
     HashSet<BuildingInfo> output = HashSet();
-    for (BuildingIsarRecord record in table.where().findAllSync()) {
+    var stuff = await table.where().findAll();
+    for (BuildingIsarRecord record in stuff) {
       output.add(record.toBuildingInfo());
     }
     return output;
 }
 
   Future<Set<PositionedBuildingInfo>> getPositionedBuildingInfos() async {
-    await _initialise();
     final table = isar.positionedBuildingRecords;
     HashSet<PositionedBuildingInfo> output = HashSet();
-    for (PositionedBuildingRecord record in table.where().findAllSync()) {
+    var stuff = await table.where().findAll();
+    for (PositionedBuildingRecord record in stuff) {
       output.add(record.toBuildingInfo());
     }
     return output;
-  }
 
-  Future _initialise() async {
-    if (!initialised) {
-      initialised = true;
-      var dir = await getApplicationDocumentsDirectory();
-      isar = await Isar.open([PositionedBuildingRecordSchema, BuildingIsarRecordSchema],
-          directory: dir.path,
-          inspector: true);
-    }
+  }
+  //
+  // //returns down, up, left, right road 1d squares
+  // Future<List<Iterable<int>>>? getObstacleAdderRecord() async {
+  //   final table = isar.obstacleAdderRecords;
+  //   var record = await table.where().findFirst();
+  //   if (record == null) {
+  //     return [[], [], [], []];
+  //   }
+  //   return [
+  //     record.downYPositions ?? [],
+  //     record.upYPositions ?? [],
+  //     record.leftXPositions ?? [],
+  //     record.rightXPositions ?? []
+  //   ];
+  // }
+  Future<void> clear() async {
+    final allRecords = isar.buildingIsarRecords
+    .where()
+    .idProperty()
+    .findAllSync();
+
+    final allPosRecords = isar.positionedBuildingRecords
+    .where()
+    .idProperty()
+    .findAllSync();
+    await isar.writeTxn(() async{
+      await isar.positionedBuildingRecords.deleteAll(allPosRecords);
+      await isar.buildingIsarRecords.deleteAll(allRecords);
+    });
+
+
   }
 
 }

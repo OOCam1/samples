@@ -21,7 +21,7 @@ import 'game_internals/models/unpositioned_building_info.dart';
 import 'game_internals/position_and_height_states/genre_grouped_position_state.dart';
 import 'game_internals/position_and_height_states/grid_item.dart';
 import 'game_internals/position_and_height_states/pixel.dart';
-import 'game_internals/position_and_height_states/position_state_interface.dart';
+import 'game_internals/position_and_height_states/position_state.dart';
 
 ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
   var primaryGenre = Genre(primaryGenreName.toString());
@@ -32,7 +32,6 @@ ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
 1. (Refactor positioning on screen code into new class)
 buildings go off screen if angle low
 2. not on screen
-2. genres are still not organised by height for real bro
 4. add river
 3. zooooooom
 10. subscriber pattern for position state being updated
@@ -40,6 +39,7 @@ buildings go off screen if angle low
 is stored in building
 6. check that largest genres are placed in centre
 13. (sort out verticalGridSize - should not have to do horizontal*ratio all the time)
+14. save genre colours and obstacle positions
 */
 
 class CityScreen extends FlameGame {
@@ -142,12 +142,14 @@ class CityScreen extends FlameGame {
 
     // var target = CuboidBuildingAsset(Vector2(0,0), 200, generateTestArtistGlobalInfo(1),20, 10, Colors.red, 0 );
     // world.add(target);
-    print('done');
+
   }
 
   void setPositions(Set<PositionedBuildingInfo> buildingInfos, Map<List<int>, GridItem> gridItems) {
-    _buildingPositionsAfterObstacles = buildingInfos;
-    _gridItemPositions = gridItems;
+    _buildingPositionsAfterObstacles = HashSet();
+    _gridItemPositions = HashMap();
+    _buildingPositionsAfterObstacles.addAll(buildingInfos);
+    _gridItemPositions.addAll(gridItems);
   }
 
   //Places buildings in grid positions, then sets each of their positions and heights, creating building components
@@ -369,7 +371,4 @@ class CityScreen extends FlameGame {
     return _screenPositionOfCenterGridSquare + Vector2(xPosition, yPosition);
   }
 
-  void changeHeight(ArtistGlobalInfo artistGlobalInfo, int height) {
-    throw UnimplementedError();
-  }
 }

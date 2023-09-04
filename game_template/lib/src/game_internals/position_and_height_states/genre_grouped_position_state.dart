@@ -7,7 +7,8 @@ import 'package:game_template/src/game_internals/models/genre.dart';
 import 'package:game_template/src/game_internals/models/positioned_building_record.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/obstacle_adder.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
-import 'package:game_template/src/game_internals/position_and_height_states/position_state_interface.dart';
+import 'package:game_template/src/game_internals/position_and_height_states/position_state.dart';
+import 'package:game_template/src/game_internals/storage.dart';
 
 import '../models/positioned_building_info.dart';
 import '../models/unpositioned_building_info.dart';
@@ -23,15 +24,14 @@ import 'position_genre.dart';
 ///cut down obstacles to grid size
 
 //first make obstacles push right/left and up/down
-class GenreGroupedPositionState implements PositionStateInterface {
-  //singleton pattern constructors
-  static final GenreGroupedPositionState _instance =
-      GenreGroupedPositionState._internal();
+class GenreGroupedPositionState implements PositionState {
 
 
 
-  factory GenreGroupedPositionState() {
-    return _instance;
+
+  static Future<GenreGroupedPositionState> create(Set<PositionedBuildingInfo> oldBuildings) async {
+    var obstacleAdder = await ObstacleAdder.create(_origin);
+    return GenreGroupedPositionState._internal(obstacleAdder, oldBuildings);
   }
 
   //map of location to building
@@ -39,6 +39,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   //map of artist to corresponding building
   final HashMap<ArtistGlobalInfo, Building> _artistGlobalInfoToBuildingMap =
       HashMap();
+
   late final ObstacleAdder _obstacleAdder;
 
   final HashMap<Genre, PositionGenre> _genreToPositionGenre = HashMap();
@@ -46,7 +47,7 @@ class GenreGroupedPositionState implements PositionStateInterface {
   //Set of empty adjacent squares
   final SplayTreeMap<int, Set<Pixel>> _adjacentEmpties = SplayTreeMap();
   //Central square
-  final Pixel _origin = Pixel(0, 0);
+  static final Pixel _origin = Pixel(0, 0);
 
 
   late int _xPureBuildingMin;
@@ -66,14 +67,15 @@ class GenreGroupedPositionState implements PositionStateInterface {
     _adjacentEmpties[0] = newSet;
   }
 
-  GenreGroupedPositionState._internal() {
+  GenreGroupedPositionState._internal(this._obstacleAdder, Set<PositionedBuildingInfo> buildingInfos) {
     var newSet = HashSet<Pixel>()..add(_origin);
-    _obstacleAdder = ObstacleAdder(_origin);
+
     _adjacentEmpties[0] = newSet;
     _xPureBuildingMin = _origin.x;
     _xMax = _origin.x;
     _yMin = _origin.y;
     _yMax = _origin.y;
+    _initialiseOldBuildings(buildingInfos);
   }
   //
   // @override
@@ -161,6 +163,14 @@ class GenreGroupedPositionState implements PositionStateInterface {
   }
 
 
+  void _initialiseOldBuildings(Set<PositionedBuildingInfo> oldBuildings) {
+    for (PositionedBuildingInfo buildingInfo in oldBuildings) {
+      PositionGenre positionGenre = _getPositionGenre(buildingInfo.artistGlobalInfo.primaryGenre);
+      var building = Building(buildingInfo, positionGenre);
+      _artistGlobalInfoToBuildingMap[buildingInfo.artistGlobalInfo] = building;
+      _placeBuildingInNewSquare(building, Pixel(buildingInfo.x, buildingInfo.y));
+    }
+  }
 
   void _placeNewBuilding(BuildingInfo buildingInfo) {
     if (_artistGlobalInfoToBuildingMap
