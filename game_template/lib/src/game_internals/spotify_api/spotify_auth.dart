@@ -27,6 +27,7 @@ class SpotifyAuth extends ChangeNotifier {
       final result = await FlutterWebAuth.authenticate(
         url: APIPath.requestAuthorization(clientId, redirectUri, state),
         callbackUrlScheme: dotenv.env['CALLBACK_URL_SCHEME']!,
+        preferEphemeral: true
       );
 
       // Validate state from response

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 
@@ -5,6 +6,7 @@ import 'package:flame/components.dart';
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:game_template/src/city_screen_record.dart';
 import 'package:game_template/src/components/boundary_square.dart';
 
 import 'package:game_template/src/components/cuboid_building_asset.dart';
@@ -12,6 +14,8 @@ import 'package:game_template/src/components/cuboid_building_asset.dart';
 import 'package:game_template/src/components/roads/uniform_road_square.dart';
 import 'package:game_template/src/components/window_maker_interface.dart';
 import 'package:game_template/src/game_internals/models/positioned_building_info.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'components/building_base_square.dart';
 import 'components/roads/block_road_square.dart';
@@ -40,6 +44,7 @@ is stored in building
 6. check that largest genres are placed in centre
 13. (sort out verticalGridSize - should not have to do horizontal*ratio all the time)
 14. save genre colours and obstacle positions
+
 */
 
 class CityScreen extends FlameGame {
@@ -136,7 +141,7 @@ class CityScreen extends FlameGame {
     _xMinPixel = -_xMaxPixel;
     _yMinPixel = -size.y / 2;
 
-    _setUpAssets();
+    await _setUpAssets();
     //Rect visibleRect = cameraComponent.visibleWorldRect;
     await world.addAll(_componentsToRender);
 
@@ -145,16 +150,45 @@ class CityScreen extends FlameGame {
 
   }
 
-  void setPositions(Set<PositionedBuildingInfo> buildingInfos, Map<List<int>, GridItem> gridItems) {
+  Future setPositions(Set<PositionedBuildingInfo> buildingInfos, Map<List<int>, GridItem> gridItems) async{
+    await _loadState();
     _buildingPositionsAfterObstacles = HashSet();
     _gridItemPositions = HashMap();
     _buildingPositionsAfterObstacles.addAll(buildingInfos);
     _gridItemPositions.addAll(gridItems);
   }
 
+  //saves colours of each genre
+  Future _saveState() async {
+    var isar = Isar.getInstance('city_screen')!;
+    List<CityScreenRecord> toWrite = [];
+    for (MapEntry<Genre, Color> mapEntry in _genreToColor.entries) {
+      toWrite.add(CityScreenRecord.create(mapEntry.key, mapEntry.value));
+    }
+    await isar.writeTxn(() async {
+      await isar.cityScreenRecords.deleteAll(await isar.cityScreenRecords.where().idProperty().findAll());
+      await isar.cityScreenRecords.putAll(toWrite);
+    });
+  }
+
+  Future _loadState() async {
+    var dir = await getApplicationDocumentsDirectory();
+    var isar = await Isar.open(
+        [CityScreenRecordSchema],
+        directory: dir.path,
+        name: 'city_screen'
+    );
+    var table = isar.cityScreenRecords;
+    var entries = await table.where().findAll();
+    for (CityScreenRecord entry in entries) {
+      var color = Color.fromRGBO(entry.red!, entry.green!, entry.blue!, entry.opacity!);
+      _genreToColor[Genre(entry.genreName!)] = color;
+    }
+  }
   //Places buildings in grid positions, then sets each of their positions and heights, creating building components
   //takes an argument of a map from ArtistGlobalInfo to a list containing (in order) x grid Position, y grid Position, height
-  void _setUpAssets() {
+  Future _setUpAssets() async {
+    if (_buildingPositionsAfterObstacles.isEmpty) {return;}
     HashMap<ArtistGlobalInfo, List<num>> artistToPosition = HashMap();
     for (PositionedBuildingInfo buildingInfo
         in _buildingPositionsAfterObstacles) {
@@ -167,10 +201,12 @@ class CityScreen extends FlameGame {
     _setGridHorizontalSize(artistToPosition, _gridItemPositions.keys);
     _setUpBuildings(artistToPosition);
     _setUpGridItemComponents(_gridItemPositions);
+    unawaited(_saveState());
     display(_gridItemPositions);
   }
 
   void _setUpBuildings(Map<ArtistGlobalInfo, List<num>> artistPositions) {
+
     for (var buildingPositionEntry in artistPositions.entries) {
       if (buildingPositionEntry.value.length != 3) {
         throw Exception(

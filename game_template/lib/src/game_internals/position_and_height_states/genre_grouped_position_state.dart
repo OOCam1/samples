@@ -94,6 +94,7 @@ class GenreGroupedPositionState implements PositionState {
   @override
   Set<PositionedBuildingInfo> getPositionsAndHeightsOfBuildings() {
     HashSet<PositionedBuildingInfo> output = HashSet();
+    _obstacleAdder.setup(_purePositionMap);
     var obstacleAdjustedBuildingMap =
         _obstacleAdder.getObstacleAdjustedBuildingPositions();
     for (MapEntry<Pixel, Building> mapEntry
@@ -159,10 +160,16 @@ class GenreGroupedPositionState implements PositionState {
     // }
     // _purePositionMap.clear();
     // _purePositionMap.addAll(newPositionMap);
-    _obstacleAdder.setup(_purePositionMap);
   }
 
-
+  @override
+  Set<PositionedBuildingInfo> getPreObstaclePositions() {
+    HashSet<PositionedBuildingInfo> output = HashSet();
+    for (MapEntry<Pixel, Building> entry in _purePositionMap.entries) {
+      output.add(PositionedBuildingInfo(entry.value.buildingInfo, entry.key.x, entry.key.y));
+    }
+    return output;
+  }
   void _initialiseOldBuildings(Set<PositionedBuildingInfo> oldBuildings) {
     for (PositionedBuildingInfo buildingInfo in oldBuildings) {
       PositionGenre positionGenre = _getPositionGenre(buildingInfo.artistGlobalInfo.primaryGenre);

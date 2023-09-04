@@ -29,18 +29,19 @@ class BuildingHandler {
   }
 
   Future run() async {
-    await _storage.clear();
+    // await _storage.clear();
 
     var buildingPositionsAfterObstacles = _positionStateInterface.getPositionsAndHeightsOfBuildings();
     var gridItemPositions = _positionStateInterface.getPositionsOfItems();
-    _cityScreen.setPositions(buildingPositionsAfterObstacles, gridItemPositions);
+    await _cityScreen.setPositions(buildingPositionsAfterObstacles, gridItemPositions);
     //TODO save the unpositioned buildings too
 
+    var positionsBeforeObstacles = _positionStateInterface.getPreObstaclePositions();
     Set<BuildingInfo> unpositionedInfos = HashSet();
-    for (PositionedBuildingInfo pos in buildingPositionsAfterObstacles) {
+    for (PositionedBuildingInfo pos in positionsBeforeObstacles) {
       unpositionedInfos.add(pos.unpositionedBuildingInfo());
     }
-    _storage.save(unpositionedInfos, buildingPositionsAfterObstacles);
+    _storage.save(unpositionedInfos, positionsBeforeObstacles);
     runApp(GameWidget(game: _cityScreen));
   }
 
@@ -50,14 +51,9 @@ class BuildingHandler {
         throw Exception('Height assigned to artist should be greater than 0');
       }
     }
-    // _buildingInfos.addAll(newBuildingInfos);
 
     _positionStateInterface.placeBuildings(newBuildingInfos.toSet());
 
-    // _buildingPositionsAfterObstacles =
-    //     positionStateInterface.getPositionsAndHeightsOfBuildings();
-
-    // _gridItemPositions = positionStateInterface.getPositionsOfItems();
   }
 
 }

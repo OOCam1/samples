@@ -8,10 +8,12 @@ abstract class PositionState {
   void placeBuildings(Set<BuildingInfo> buildings);
   // void changeHeight(ArtistGlobalInfo artistGlobalInfo, double height);
   void clear();
+
+
   Map<List<int>, GridItem> getPositionsOfItems();
   //List contains x, then y, then height
   Set<PositionedBuildingInfo> getPositionsAndHeightsOfBuildings();
-
+  Set<PositionedBuildingInfo> getPreObstaclePositions();
   int get xMax;
   int get xMin;
   int get yMax;

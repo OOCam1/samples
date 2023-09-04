@@ -26,10 +26,10 @@ class ObstacleAdder {
   Isar isar;
   final Map<Pixel, GridItem> _obstacleAdjustedPositionMap = HashMap();
   final Map<Pixel, Building> _obstacleAdjustedBuildingMap = HashMap();
-  Iterable<int> _leftPushingRoadXPositions = HashSet();
-  Iterable<int> _rightPushingRoadXPositions = HashSet();
-  Iterable<int> _upPushingRoadYPositions = HashSet();
-  Iterable<int> _downPushingRoadYPositions = HashSet();
+  Set<int> _leftPushingRoadXPositions = HashSet();
+  Set<int> _rightPushingRoadXPositions = HashSet();
+  Set<int> _upPushingRoadYPositions = HashSet();
+  Set<int> _downPushingRoadYPositions = HashSet();
 
   final HashSet<Pixel> _leftPushingObstaclePositions = HashSet();
   final HashSet<Pixel> _rightPushingObstaclePositions = HashSet();
@@ -43,10 +43,27 @@ class ObstacleAdder {
     var dir = await getApplicationDocumentsDirectory();
     var isar = await Isar.open([ObstacleAdderRecordSchema],
         directory: dir.path,
-    name : "obstacle_adder");
-    return ObstacleAdder._internal(origin, isar);
+        name : "obstacle_adder");
+    var table = isar.obstacleAdderRecords;
+    var record = await table.where().findFirst();
+
+    if (record == null) {
+      return ObstacleAdder._internal(origin, isar, HashSet(), HashSet(),HashSet(), HashSet());
+    }
+    var downPushingRoadYPositions = record.downYPositions?.toSet() ?? HashSet();
+    var upPushingRoadYPositions = record.upYPositions?.toSet() ?? HashSet();
+    var leftPushingRoadXPositions = record.leftXPositions?.toSet() ?? HashSet();
+    var rightPushingRoadXPositions = record.rightXPositions?.toSet() ?? HashSet();
+
+
+    return ObstacleAdder._internal(origin, isar,
+        rightPushingRoadXPositions,
+      leftPushingRoadXPositions,
+      upPushingRoadYPositions,
+      downPushingRoadYPositions
+    );
   }
-  ObstacleAdder._internal(this._origin, this.isar);
+  ObstacleAdder._internal(this._origin, this.isar, this._rightPushingRoadXPositions, this._leftPushingRoadXPositions, this._upPushingRoadYPositions, this._downPushingRoadYPositions);
 
   void clear() {
     _obstacleAdjustedBuildingMap.clear();
@@ -66,8 +83,7 @@ class ObstacleAdder {
 
 
 
-  Future setup(Map<Pixel, Building> purePositionMap) async{
-    await _loadState();
+  void setup(Map<Pixel, Building> purePositionMap) {
     _leftPushingObstaclePositions.clear();
     _rightPushingObstaclePositions.clear();
     _upPushingObstaclePositions.clear();
@@ -111,19 +127,6 @@ class ObstacleAdder {
     });
   }
 
-  Future _loadState() async {
-    final table = isar.obstacleAdderRecords;
-    var record = await table.where().findFirst();
-    if (record == null) {
-      return [[], [], [], []];
-    }
-    return [
-      record.downYPositions ?? [],
-      record.upYPositions ?? [],
-      record.leftXPositions ?? [],
-      record.rightXPositions ?? []
-    ];
-  }
 
 
   void _addBoundaries() {
@@ -221,11 +224,11 @@ class ObstacleAdder {
     Set<int> increasePushingPositions;
     Set<int> decreasePushingPositions;
     if (axis == 0) {
-      increasePushingPositions = _rightPushingRoadXPositions.toSet();
-      decreasePushingPositions = _leftPushingRoadXPositions.toSet();
+      increasePushingPositions = _rightPushingRoadXPositions;
+      decreasePushingPositions = _leftPushingRoadXPositions;
     } else {
-      increasePushingPositions = _upPushingRoadYPositions.toSet();
-      decreasePushingPositions = _downPushingRoadYPositions.toSet();
+      increasePushingPositions = _upPushingRoadYPositions;
+      decreasePushingPositions = _downPushingRoadYPositions;
     }
 
     int decreaseUpperLimit = (decreasePushingPositions.isNotEmpty)

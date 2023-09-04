@@ -11,6 +11,8 @@ import 'unpositioned_building_info.dart';
 class PositionedBuildingInfo implements BuildingInfo{
   late int x;
   late  int y;
+  late int preObstacleX;
+  late int preObstacleY;
   late final BuildingInfo _buildingInfo;
 
   @override
