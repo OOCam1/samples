@@ -3,11 +3,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth/flutter_web_auth.dart';
-import 'package:game_template/src/game_internals/models/user.dart';
-import 'package:game_template/src/game_internals/spotify_api/spotify_api.dart';
 import 'package:game_template/src/game_internals/spotify_api/spotify_auth.dart';
 import 'package:test/test.dart';
-import 'package:flutter/services.dart' show MethodChannel;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

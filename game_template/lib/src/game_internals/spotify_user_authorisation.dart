@@ -6,7 +6,7 @@ class SpotifyUserAuthorisation {
   late final String _CLIENTSECRET;
   late final String _redirectUri;
   String _basicAccessToken = '';
-  String _advancedAccessToken = '';
+  final String _advancedAccessToken = '';
 
   SpotifyUserAuthorisation(this._CLIENTID, this._CLIENTSECRET, this._redirectUri);
 

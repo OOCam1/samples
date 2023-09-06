@@ -2,13 +2,10 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:game_template/src/game_internals/models/artist_global_info.dart';
-import 'package:game_template/src/game_internals/models/building_isar_record.dart';
 import 'package:game_template/src/game_internals/models/genre.dart';
-import 'package:game_template/src/game_internals/models/positioned_building_record.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/obstacle_adder.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/pixel.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/position_state.dart';
-import 'package:game_template/src/game_internals/storage.dart';
 
 import '../models/positioned_building_info.dart';
 import '../models/unpositioned_building_info.dart';

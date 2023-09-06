@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 class SpotifyDataGetter {
 
   static final SpotifyDataGetter _instance = SpotifyDataGetter._internal();
-  String _access_token = '';
+  final String _access_token = '';
   final String _CLIENTID = '0b4fbe18cf2640d79eb59254f36241aa';
   final String _CLIENTSECRET = 'd861453d0fa04257959df16ca0e19fa7';
   late final SpotifyUserAuthorisation auth = SpotifyUserAuthorisation(_CLIENTID, _CLIENTSECRET, 'http://localhost:3000');

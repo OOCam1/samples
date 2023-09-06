@@ -1,6 +1,5 @@
 import 'dart:collection';
 
-import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +18,7 @@ class CuboidBuildingAsset extends BuildingAsset {
   int get priority => _priority;
 
   late final PolygonComponent _leftSide;
-  late int _priority;
+  late final int _priority;
   late final PolygonComponent _rightSide;
   late final PolygonComponent _top;
   late final PolygonComponent _leftOutline;
@@ -29,9 +28,9 @@ class CuboidBuildingAsset extends BuildingAsset {
   late double _cuboidHeight;
   late final ArtistGlobalInfo _artistGlobalInfo;
   static const double _rightDarkerThanLeftPercentage = 0.6;
-  late double _horizontalDifferenceFromCenterToSideCorner;
-  late double _heightDifferenceFromCenterToSideCorner;
-  late Color _leftColor;
+  late final double _horizontalDifferenceFromCenterToSideCorner;
+  late final double _heightDifferenceFromCenterToSideCorner;
+  late final Color _leftColor;
   late Set<Window> _windows;
 
   late WindowMaker _windowMaker;

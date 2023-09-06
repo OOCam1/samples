@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:game_template/src/game_internals/position_and_height_states/obstacle_adder_record.dart';
-import 'package:get/get.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 

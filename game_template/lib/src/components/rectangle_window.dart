@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
@@ -7,10 +6,10 @@ import 'window.dart';
 
 //window is centered on bottom inner corner
 class RectangleWindow extends Window {
-  bool _leftSideOfBuilding;
-  double _yOffsetFromCenterVertexToOuterVertex;
-  double _viewedHeight;
-  Paint _paint = Paint();
+  final bool _leftSideOfBuilding;
+  final double _yOffsetFromCenterVertexToOuterVertex;
+  final double _viewedHeight;
+  final Paint _paint = Paint();
   late List<Vector2> _vertices;
 
   @override

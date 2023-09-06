@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:game_template/src/game_internals/models/artist_global_info.dart';
 import 'package:game_template/src/game_internals/spotify_api/spotify_interceptor.dart';
 import 'package:http/http.dart';
 import 'package:http_interceptor/http_interceptor.dart';
@@ -17,7 +18,7 @@ class SpotifyApi {
   static Client client = InterceptedClient.build(interceptors: [
     SpotifyInterceptor(),
   ], retryPolicy: ExpiredTokenRetryPolicy());
-
+  
   static Future<User> getCurrentUser() async {
     final response = await client.get(Uri.parse(APIPath.getCurrentUser));
 
@@ -40,6 +41,30 @@ class SpotifyApi {
     }
   }
 
+  static Future<List<ArtistGlobalInfo>> getTopArtists(int offset, String time_range) async {
+    if (time_range != "short_term" && time_range != "medium_term" && time_range != "long_term") {
+      throw Exception("Please input valid time frame");
+    }
+    if (offset < 0 || offset >= 50) {
+      throw Exception("Enter offset between 0 and 49 inclusive");
+    }
+
+    final response = await client.get(Uri.parse(APIPath.getTopItems(type: "artists", time_range: time_range, offset: offset)));
+
+    if (response.statusCode == 200) {
+      var jsonMap = json.decode(response.body) as Map<String, dynamic>;
+      var items = jsonMap["items"] as List<Map<String, dynamic>>;
+      List<ArtistGlobalInfo> output = [];
+      for (var artistJson in items) {
+        output.add(ArtistGlobalInfo.fromJson(artistJson));
+      }
+      return output;
+
+    } else {
+      throw Exception(
+          'Failed to get top items with status code ${response.statusCode}');
+    }
+  }
 
 
   // static Future<Playlist> getPlaylist(String? playlistId) async {

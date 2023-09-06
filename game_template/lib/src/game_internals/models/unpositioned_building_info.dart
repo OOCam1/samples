@@ -1,7 +1,6 @@
 import 'dart:collection';
 
 import 'package:game_template/src/game_internals/models/artist_global_info.dart';
-import 'package:isar/isar.dart';
 
 
 class BuildingInfo {

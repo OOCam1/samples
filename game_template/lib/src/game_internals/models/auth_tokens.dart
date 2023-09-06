@@ -21,7 +21,7 @@ class AuthTokens {
 
   Future<void> saveToStorage() async {
     try {
-      final storage = new FlutterSecureStorage();
+      final storage = FlutterSecureStorage();
       await storage.write(key: accessTokenKey, value: accessToken);
       await storage.write(key: refreshTokenKey, value: refreshToken);
     } catch (e) {
@@ -33,7 +33,7 @@ class AuthTokens {
     String? accessKey;
     String? refreshKey;
 
-    final storage = new FlutterSecureStorage();
+    final storage = FlutterSecureStorage();
     accessKey = await storage.read(key: accessTokenKey);
     refreshKey = await storage.read(key: refreshTokenKey);
     if (accessKey == null || refreshKey == null) return null;
@@ -42,7 +42,7 @@ class AuthTokens {
   }
 
   static Future<void> clearStorage() async {
-    final storage = new FlutterSecureStorage();
+    final storage = FlutterSecureStorage();
     await storage.delete(key: accessTokenKey);
     await storage.delete(key: refreshTokenKey);
   }

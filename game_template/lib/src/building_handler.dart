@@ -10,7 +10,6 @@ import 'package:game_template/src/city_screen.dart';
 import 'game_internals/models/positioned_building_info.dart';
 import 'game_internals/models/unpositioned_building_info.dart';
 import 'game_internals/position_and_height_states/genre_grouped_position_state.dart';
-import 'game_internals/position_and_height_states/grid_item.dart';
 import 'game_internals/position_and_height_states/position_state.dart';
 import 'game_internals/storage.dart';
 

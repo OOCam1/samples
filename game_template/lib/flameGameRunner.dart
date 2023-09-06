@@ -1,22 +1,10 @@
-import "dart:collection";
 
 
-import "package:flame/game.dart";
-import "package:flutter/cupertino.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
-import "package:game_template/src/building_handler.dart";
-import 'package:game_template/src/city_screen.dart';
 import "package:game_template/src/game_internals/models/artist_global_info.dart";
-import "package:game_template/src/game_internals/models/building_isar_record.dart";
 import "package:game_template/src/game_internals/models/genre.dart";
-import "package:game_template/src/game_internals/models/positioned_building_info.dart";
-import "package:game_template/src/game_internals/models/positioned_building_record.dart";
-import "package:game_template/src/game_internals/models/unpositioned_building_info.dart";
 import "package:game_template/src/game_internals/spotify_api/spotify_api.dart";
 import "package:game_template/src/game_internals/spotify_api/spotify_auth.dart";
-import "package:game_template/src/game_internals/storage.dart";
-import "package:isar/isar.dart";
-import "package:path_provider/path_provider.dart";
 
 ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName, int id) {
   var primaryGenre = Genre(primaryGenreName.toString());
@@ -58,5 +46,8 @@ void main() async {
   await auth.signOut();
   await auth.authenticate();
   var api = await SpotifyApi.getCurrentUser();
-  print(api.name!);
+  var topArtists = await SpotifyApi.getTopArtists(0, "short_term");
+  for (var item in topArtists) {
+    print(item.name);
+  }
 }

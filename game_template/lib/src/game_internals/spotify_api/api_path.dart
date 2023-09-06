@@ -1,10 +1,9 @@
 class APIPath {
-  static List<String> _scopes = [
+  static final List<String> _scopes = [
     'user-read-private',
     'user-read-email',
-    'playlist-read-private',
-    'user-modify-playback-state',
-    'user-read-playback-state'
+    'user-top-read',
+    'user-read-recently-played'
   ];
 
   static String requestAuthorization(
@@ -33,4 +32,7 @@ class APIPath {
   static String play = 'https://api.spotify.com/v1/me/player/play';
   static String pause = 'https://api.spotify.com/v1/me/player/pause';
   static String player = 'https://api.spotify.com/v1/me/player';
+  static String getTopItems({required String? type,required String? time_range, required int offset}) =>
+      'https://api.spotify.com/v1/me/top/$type?time_range=$time_range&offset=$offset&limit=50';
+
 }

@@ -1,6 +1,4 @@
-import 'package:game_template/src/game_internals/spotify_api/spotify_api.dart';
 import 'package:game_template/src/game_internals/spotify_api/spotify_auth.dart';
-import 'package:get/get.dart';
 
 
 class SpotifyUriManager {

@@ -1,10 +1,7 @@
 
 
-import 'package:flutter/cupertino.dart';
 import 'package:game_template/src/game_internals/models/artist_global_info.dart';
-import 'package:isar/isar.dart';
 
-import '../position_and_height_states/building.dart';
 import 'unpositioned_building_info.dart';
 
 

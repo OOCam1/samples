@@ -1,10 +1,8 @@
 
 
 import 'dart:collection';
-import 'dart:ffi';
 
 import 'package:game_template/src/game_internals/models/artist_global_info.dart';
-import 'package:game_template/src/game_internals/models/positioned_building_info.dart';
 import 'package:game_template/src/game_internals/models/unpositioned_building_info.dart';
 import 'package:isar/isar.dart';
 

@@ -11,7 +11,6 @@ import 'package:game_template/src/components/boundary_square.dart';
 
 import 'package:game_template/src/components/cuboid_building_asset.dart';
 
-import 'package:game_template/src/components/roads/uniform_road_square.dart';
 import 'package:game_template/src/components/window_maker_interface.dart';
 import 'package:game_template/src/game_internals/models/positioned_building_info.dart';
 import 'package:isar/isar.dart';
@@ -21,11 +20,8 @@ import 'components/building_base_square.dart';
 import 'components/roads/block_road_square.dart';
 import 'game_internals/models/artist_global_info.dart';
 import 'game_internals/models/genre.dart';
-import 'game_internals/models/unpositioned_building_info.dart';
-import 'game_internals/position_and_height_states/genre_grouped_position_state.dart';
 import 'game_internals/position_and_height_states/grid_item.dart';
 import 'game_internals/position_and_height_states/pixel.dart';
-import 'game_internals/position_and_height_states/position_state.dart';
 
 ArtistGlobalInfo generateTestArtistGlobalInfo(int primaryGenreName) {
   var primaryGenre = Genre(primaryGenreName.toString());
@@ -120,7 +116,7 @@ class CityScreen extends FlameGame {
             case GridItem.intersectionRoad:
               gd = 'i';
           }
-          str += "|" + gd + " |";
+          str += "|$gd |";
         } else {
           str += "|  |";
         }

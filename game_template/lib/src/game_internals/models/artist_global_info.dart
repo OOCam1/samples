@@ -1,7 +1,6 @@
 
 import 'dart:collection';
 
-import 'package:isar/isar.dart';
 
 import 'genre.dart';
 
