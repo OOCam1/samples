@@ -34,5 +34,6 @@ class APIPath {
   static String player = 'https://api.spotify.com/v1/me/player';
   static String getTopItems({required String? type,required String? time_range, required int offset}) =>
       'https://api.spotify.com/v1/me/top/$type?time_range=$time_range&offset=$offset&limit=50';
-
+  static String getRecentlyPlayed({int after = 0}) =>
+    'https://api.spotify.com/v1/me/player/recently-played?limit=50&after=$after';
 }

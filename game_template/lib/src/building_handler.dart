@@ -6,11 +6,13 @@ import 'dart:collection';
 import 'package:flame/game.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:game_template/src/city_screen.dart';
+import 'package:game_template/src/game_internals/position_and_height_states/score_handler.dart';
 
 import 'game_internals/models/positioned_building_info.dart';
 import 'game_internals/models/unpositioned_building_info.dart';
 import 'game_internals/position_and_height_states/genre_grouped_position_state.dart';
 import 'game_internals/position_and_height_states/position_state.dart';
+import 'game_internals/position_and_height_states/score_contract.dart';
 import 'game_internals/storage.dart';
 
 class BuildingHandler {
@@ -18,42 +20,49 @@ class BuildingHandler {
   final PositionState _positionStateInterface;
   final CityScreen _cityScreen = CityScreen();
   final Storage _storage;
+  final ScoreHandler _scoreContract;
 
-  BuildingHandler._internal(this._storage, this._positionStateInterface);
+  BuildingHandler._internal(this._storage, this._positionStateInterface, this._scoreContract);
 
   static Future<BuildingHandler> create() async {
     var storage = await Storage.create();
     var positionState = await GenreGroupedPositionState.create(await storage.getPositionedBuildingInfos());
-    return BuildingHandler._internal(storage, positionState);
+    var scoreContract = ScoreHandler(storage);
+    return BuildingHandler._internal(storage, positionState, scoreContract);
   }
 
   Future run() async {
-    // await _storage.clear();
+    await _storage.clear();
+    await _scoreContract.generateScores();
+    var oldBuildings = _scoreContract.getUpdatedScores().toSet();
+    var newBuildings = _scoreContract.getNewBuildings().toSet();
 
+    _positionStateInterface.updateScores(oldBuildings);
+    _positionStateInterface.placeBuildings(newBuildings);
     var buildingPositionsAfterObstacles = _positionStateInterface.getPositionsAndHeightsOfBuildings();
     var gridItemPositions = _positionStateInterface.getPositionsOfItems();
     await _cityScreen.setPositions(buildingPositionsAfterObstacles, gridItemPositions);
     //TODO save the unpositioned buildings too
 
     var positionsBeforeObstacles = _positionStateInterface.getPreObstaclePositions();
-    Set<BuildingInfo> unpositionedInfos = HashSet();
-    for (PositionedBuildingInfo pos in positionsBeforeObstacles) {
-      unpositionedInfos.add(pos.unpositionedBuildingInfo());
-    }
-    _storage.save(unpositionedInfos, positionsBeforeObstacles);
+    // Set<BuildingInfo> unpositionedInfos = HashSet();
+    // for (PositionedBuildingInfo pos in positionsBeforeObstacles) {
+    //   unpositionedInfos.add(pos.unpositionedBuildingInfo());
+    // }
+    _storage.save(newBuildings.union(oldBuildings), positionsBeforeObstacles);
     runApp(GameWidget(game: _cityScreen));
   }
 
-  void addBuildings(Iterable<BuildingInfo> newBuildingInfos) {
-    for (BuildingInfo buildingInfo in newBuildingInfos) {
-      if (buildingInfo.height <= 0) {
-        throw Exception('Height assigned to artist should be greater than 0');
-      }
-    }
-
-    _positionStateInterface.placeBuildings(newBuildingInfos.toSet());
-
-  }
+  // void addBuildings(Iterable<BuildingInfo> newBuildingInfos) {
+  //   for (BuildingInfo buildingInfo in newBuildingInfos) {
+  //     if (buildingInfo.height <= 0) {
+  //       throw Exception('Height assigned to artist should be greater than 0');
+  //     }
+  //   }
+  //
+  //   _positionStateInterface.placeBuildings(newBuildingInfos.toSet());
+  //
+  // }
 
 }
 

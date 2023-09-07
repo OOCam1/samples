@@ -55,7 +55,7 @@ class BuildingIsarRecord {
       newGenres.add(Genre(genreName));
     }
     var newArtistInfo = ArtistGlobalInfo(Uri.parse(uri!), artistName!, artistId!, newGenres);
-    var newInfo = BuildingInfo(score!, newArtistInfo);
+    var newInfo = BuildingInfo(newArtistInfo)..score = score!;
     _recordToInfo[this] = newInfo;
     _infoToRecord[newInfo] = this;
     return newInfo;

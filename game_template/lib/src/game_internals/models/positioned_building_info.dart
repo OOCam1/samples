@@ -27,9 +27,15 @@ class PositionedBuildingInfo implements BuildingInfo{
   @override
   double get score => _buildingInfo.score;
 
-  BuildingInfo unpositionedBuildingInfo() {
-    return BuildingInfo(score, artistGlobalInfo);
+  @override
+  void addScore(double timeRatio, int rank) {
+    _buildingInfo.addScore(timeRatio, rank);
   }
+
+  BuildingInfo unpositionedBuildingInfo() {
+    return BuildingInfo(artistGlobalInfo);
+  }
+
 
 
 }

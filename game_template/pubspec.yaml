@@ -18,7 +18,7 @@ dependencies:
   go_router: ^8.0.0
   logging: ^1.1.0
   provider: ^6.0.2
-  shared_preferences: ^2.0.13
+  shared_preferences: ^2.2.1
 
   # If you don't need one of the following dependencies,
   # delete the relevant line below, and get rid of any Dart code
@@ -40,6 +40,7 @@ dependencies:
   isar: ^3.1.0+1
   isar_flutter_libs: ^3.1.0+1
   path_provider: ^2.1.1
+  dart_numerics: ^0.0.6
 
 dev_dependencies:
   analysis_defaults:

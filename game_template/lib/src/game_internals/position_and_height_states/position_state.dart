@@ -5,7 +5,7 @@ import '../models/unpositioned_building_info.dart';
 
 abstract class PositionState {
   void placeBuildings(Set<BuildingInfo> buildings);
-  // void changeHeight(ArtistGlobalInfo artistGlobalInfo, double height);
+  void updateScores(Set<BuildingInfo> buildings);
   void clear();
 
 

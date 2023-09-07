@@ -40,8 +40,13 @@ class SpotifyApi {
           'Failed to get user with status code ${response.statusCode}');
     }
   }
-
-  static Future<List<ArtistGlobalInfo>> getTopArtists(int offset, String time_range) async {
+  static Future<List<ArtistGlobalInfo>> getTop99Artists(String time_range) async {
+    var output = await getTop50Artists(0, time_range);
+    var next50 = await getTop50Artists(49, time_range);
+    output.addAll(next50.sublist(1));
+    return output;
+  }
+  static Future<List<ArtistGlobalInfo>> getTop50Artists(int offset, String time_range) async {
     if (time_range != "short_term" && time_range != "medium_term" && time_range != "long_term") {
       throw Exception("Please input valid time frame");
     }
@@ -53,10 +58,10 @@ class SpotifyApi {
 
     if (response.statusCode == 200) {
       var jsonMap = json.decode(response.body) as Map<String, dynamic>;
-      var items = jsonMap["items"] as List<Map<String, dynamic>>;
+      var items = jsonMap["items"]! as  List<dynamic>;
       List<ArtistGlobalInfo> output = [];
       for (var artistJson in items) {
-        output.add(ArtistGlobalInfo.fromJson(artistJson));
+        output.add(ArtistGlobalInfo.fromJson(artistJson as Map<String, dynamic>));
       }
       return output;
 
@@ -65,6 +70,7 @@ class SpotifyApi {
           'Failed to get top items with status code ${response.statusCode}');
     }
   }
+
 
 
   // static Future<Playlist> getPlaylist(String? playlistId) async {

@@ -34,6 +34,7 @@ class Building {
 
   BuildingInfo get buildingInfo => _buildingInfo;
   double get height => _buildingInfo.height;
+  set score(double value) => _buildingInfo.score = value;
   ArtistGlobalInfo get artistGlobalInfo => _buildingInfo.artistGlobalInfo;
   PositionGenre get positionGenre => _positionGenre;
 }

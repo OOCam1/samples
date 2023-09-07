@@ -167,6 +167,18 @@ class GenreGroupedPositionState implements PositionState {
     }
     return output;
   }
+
+  @override
+  void updateScores(Set<BuildingInfo> buildings) {
+    for (var buildingInfo in buildings) {
+      var artist = buildingInfo.artistGlobalInfo;
+      if (!_artistGlobalInfoToBuildingMap.containsKey(artist)) {
+        throw Exception("Updated height artist info not in position state");
+      }
+      _artistGlobalInfoToBuildingMap[artist]!.score = buildingInfo.score;
+    }
+
+  }
   void _initialiseOldBuildings(Set<PositionedBuildingInfo> oldBuildings) {
     for (PositionedBuildingInfo buildingInfo in oldBuildings) {
       PositionGenre positionGenre = _getPositionGenre(buildingInfo.artistGlobalInfo.primaryGenre);
@@ -289,4 +301,6 @@ class GenreGroupedPositionState implements PositionState {
 
   @override
   int get yMax => _yMax;
+
+
 }
