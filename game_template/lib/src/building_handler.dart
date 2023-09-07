@@ -5,8 +5,10 @@ import 'dart:collection';
 
 import 'package:flame/game.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:game_template/src/city_screen.dart';
 import 'package:game_template/src/game_internals/position_and_height_states/score_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'game_internals/models/positioned_building_info.dart';
 import 'game_internals/models/unpositioned_building_info.dart';
@@ -25,18 +27,22 @@ class BuildingHandler {
   BuildingHandler._internal(this._storage, this._positionStateInterface, this._scoreContract);
 
   static Future<BuildingHandler> create() async {
+    await dotenv.load();
+    // var prefs = await SharedPreferences.getInstance();
+    // await prefs.clear();
     var storage = await Storage.create();
+    // await storage.clear();
     var positionState = await GenreGroupedPositionState.create(await storage.getPositionedBuildingInfos());
     var scoreContract = ScoreHandler(storage);
     return BuildingHandler._internal(storage, positionState, scoreContract);
   }
 
   Future run() async {
-    await _storage.clear();
+
     await _scoreContract.generateScores();
     var oldBuildings = _scoreContract.getUpdatedScores().toSet();
     var newBuildings = _scoreContract.getNewBuildings().toSet();
-
+    var unbuiltBuildings = _scoreContract.getUnbuiltBuildings().toSet();
     _positionStateInterface.updateScores(oldBuildings);
     _positionStateInterface.placeBuildings(newBuildings);
     var buildingPositionsAfterObstacles = _positionStateInterface.getPositionsAndHeightsOfBuildings();
@@ -49,7 +55,7 @@ class BuildingHandler {
     // for (PositionedBuildingInfo pos in positionsBeforeObstacles) {
     //   unpositionedInfos.add(pos.unpositionedBuildingInfo());
     // }
-    _storage.save(newBuildings.union(oldBuildings), positionsBeforeObstacles);
+    _storage.save(newBuildings.union(oldBuildings).union(unbuiltBuildings), positionsBeforeObstacles);
     runApp(GameWidget(game: _cityScreen));
   }
 

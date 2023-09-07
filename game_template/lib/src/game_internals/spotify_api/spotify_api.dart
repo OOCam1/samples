@@ -43,6 +43,9 @@ class SpotifyApi {
   static Future<List<ArtistGlobalInfo>> getTop99Artists(String time_range) async {
     var output = await getTop50Artists(0, time_range);
     var next50 = await getTop50Artists(49, time_range);
+    if (next50.isEmpty) {
+      return output;
+    }
     output.addAll(next50.sublist(1));
     return output;
   }

@@ -170,6 +170,7 @@ class GenreGroupedPositionState implements PositionState {
 
   @override
   void updateScores(Set<BuildingInfo> buildings) {
+
     for (var buildingInfo in buildings) {
       var artist = buildingInfo.artistGlobalInfo;
       if (!_artistGlobalInfoToBuildingMap.containsKey(artist)) {

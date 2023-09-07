@@ -32,5 +32,5 @@ class ArtistGlobalInfo {
     return ArtistGlobalInfo(Uri.parse(json['uri'] as String), json['name'] as String, json['id'] as String,  genres);
   }
 
-  Genre get primaryGenre => genres[0];
+  Genre get primaryGenre => (genres.isNotEmpty) ? genres[0] : Genre("Unclassified");
 }

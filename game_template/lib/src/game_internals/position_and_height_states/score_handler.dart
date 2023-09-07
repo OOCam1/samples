@@ -19,7 +19,7 @@ class ScoreHandler implements ScoreContract {
   static const Duration _sixMonths = Duration(days: 183);
   final Storage _storage;
   ScoreHandler(this._storage);
-  final HashSet<BuildingInfo> _unreadyBuildings = HashSet();
+  final HashSet<BuildingInfo> _unbuiltBuildings = HashSet();
   final HashSet<BuildingInfo> _newBuildings = HashSet();
   final HashSet<BuildingInfo> _oldBuildings = HashSet();
   DateTime? _lastDateTime;
@@ -32,6 +32,10 @@ class ScoreHandler implements ScoreContract {
     HashSet<BuildingInfo> output = HashSet();
     output.addAll(_newBuildings);
     return output;
+  }
+
+  Iterable<BuildingInfo> getUnbuiltBuildings() {
+    return HashSet()..addAll(_unbuiltBuildings);
   }
 
   @override
@@ -49,7 +53,13 @@ class ScoreHandler implements ScoreContract {
     if (_firstTime) {
       var artists = await SpotifyApi.getTop99Artists("long_term");
         for (int i = 0; i < artists.length; i ++) {
-          _oldBuildings.add(BuildingInfo(artists[i])..addScore(-1, i));
+          var building = BuildingInfo(artists[i])..addScore(-1, i);
+          if (building.height <= 0) {
+            _unbuiltBuildings.add(building);
+          }
+          else {
+            _newBuildings.add(building);
+          }
         }
     }
     else {
@@ -69,7 +79,10 @@ class ScoreHandler implements ScoreContract {
         var building = BuildingInfo(artists[rank]);
         var oldHeight = building.height;
         building.addScore(timeRatio, rank);
-        if (building.height == 0 || oldHeight == 0) {
+        if (building.height == 0) {
+          _unbuiltBuildings.add(building);
+        }
+        else if (oldHeight == 0) {
           _newBuildings.add(building);
         }
         else{
@@ -84,7 +97,7 @@ class ScoreHandler implements ScoreContract {
     var buildingInfos = await _storage.getBuildingInfos();
     for (BuildingInfo info in buildingInfos ) {
       if (info.score == 0) {
-        _newBuildings.add(info);
+        _unbuiltBuildings.add(info);
       }
       else {
         _oldBuildings.add(info);
