@@ -75,6 +75,7 @@ class ScoreHandler implements ScoreContract {
       else {
         artists = await SpotifyApi.getTop99Artists("long_term");
       }
+      var storedArtists = _unbuiltBuildings.union(_newBuildings).union(_oldBuildings);
       for (int rank = 0; rank < artists.length; rank ++) {
         var building = BuildingInfo(artists[rank]);
         var oldHeight = building.height;
@@ -84,9 +85,7 @@ class ScoreHandler implements ScoreContract {
         }
         else if (oldHeight == 0) {
           _newBuildings.add(building);
-        }
-        else{
-          _oldBuildings.add(building);
+          _unbuiltBuildings.remove(building);
         }
       }
     }

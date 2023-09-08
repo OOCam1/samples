@@ -13,7 +13,7 @@ part 'building_isar_record.g.dart';
 @collection
 class BuildingIsarRecord {
 
-  static final Map<BuildingInfo, BuildingIsarRecord> _infoToRecord = HashMap();
+  static final Map<String, BuildingIsarRecord> _infoToRecord = HashMap();
   static final Map<BuildingIsarRecord, BuildingInfo> _recordToInfo = HashMap();
 
   Id id = Isar.autoIncrement;
@@ -41,7 +41,7 @@ class BuildingIsarRecord {
         ..uri = buildingInfo.artistGlobalInfo.uri.toString()
         ..score = buildingInfo.score
         ..genreNames = genreNames.toList();
-    _infoToRecord[buildingInfo] = newRecord;
+    _infoToRecord[buildingInfo.artistGlobalInfo.id] = newRecord;
     _recordToInfo[newRecord] = buildingInfo;
     return newRecord;
   }
@@ -57,7 +57,7 @@ class BuildingIsarRecord {
     var newArtistInfo = ArtistGlobalInfo(Uri.parse(uri!), artistName!, artistId!, newGenres);
     var newInfo = BuildingInfo(newArtistInfo)..score = score!;
     _recordToInfo[this] = newInfo;
-    _infoToRecord[newInfo] = this;
+    _infoToRecord[artistName!] = this;
     return newInfo;
 }
 }

@@ -28,10 +28,10 @@ class BuildingHandler {
 
   static Future<BuildingHandler> create() async {
     await dotenv.load();
-    // var prefs = await SharedPreferences.getInstance();
-    // await prefs.clear();
+    var prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
     var storage = await Storage.create();
-    // await storage.clear();
+    await storage.clear();
     var positionState = await GenreGroupedPositionState.create(await storage.getPositionedBuildingInfos());
     var scoreContract = ScoreHandler(storage);
     return BuildingHandler._internal(storage, positionState, scoreContract);
@@ -48,7 +48,6 @@ class BuildingHandler {
     var buildingPositionsAfterObstacles = _positionStateInterface.getPositionsAndHeightsOfBuildings();
     var gridItemPositions = _positionStateInterface.getPositionsOfItems();
     await _cityScreen.setPositions(buildingPositionsAfterObstacles, gridItemPositions);
-    //TODO save the unpositioned buildings too
 
     var positionsBeforeObstacles = _positionStateInterface.getPreObstaclePositions();
     // Set<BuildingInfo> unpositionedInfos = HashSet();
